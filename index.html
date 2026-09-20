@@ -884,14 +884,16 @@ function gorselSikistir(dosya, maxBoyut){
 }
 
 const DS_SISTEM_PROMPT =
-'You are reading a photo of one or more British 90-ball bingo tickets.\n'+
+'You are reading a photo of a British 90-ball bingo ticket.\n'+
 'Rules of a 90-ball bingo ticket:\n'+
-'- Each ticket has exactly 3 rows and 9 columns.\n'+
+'- It has exactly 3 rows and 9 columns.\n'+
 '- Each row has exactly 5 printed numbers and 4 blank cells.\n'+
 '- Column 1 holds numbers 1-9, column 2 holds 10-19, column 3 holds 20-29, ... column 8 holds 80-89, column 9 holds 80-90.\n'+
 '- Within a column, numbers read top to bottom in ascending order.\n'+
-'There may be several separate tickets in the photo (e.g. a strip of tickets, possibly arranged in two side-by-side '+
-'columns). Read EVERY ticket you can clearly identify, in reading order (left-to-right, top-to-bottom).\n'+
+'The photo may show a sheet/strip that PRINTS several tickets, but only ONE of them is actually being played right '+
+'now. Identify and read ONLY the single ticket that is most clearly the main subject of the photo (typically the '+
+'one that is largest, most centered, or most in focus) and IGNORE every other ticket printed on the sheet — do '+
+'not report them. Always return exactly ONE ticket in the "cards" array, never more than one.\n'+
 'For every cell output the printed number, or null if the cell is blank.\n'+
 'Respond with ONLY valid JSON, no explanation, no markdown code fences, in exactly this shape:\n'+
 '{"cards":[{"rows":[[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9]]}]}\n'+
@@ -977,7 +979,9 @@ function kutuGecerliMi(kutu){
 }
 
 function kuyrukKur(json, kaynakDataUrl){
-  const kartlar=(json && json.cards) || [];
+  /* Bir fotoğrafta birden fazla bilet BASILI olsa bile o an oynanan tek bir bölümdür —
+     DeepSeek yine de birden fazla döndürürse (istem metnine rağmen), sadece ilkini alırız. */
+  const kartlar=((json && json.cards) || []).slice(0,1);
   const temiz=[];
   for(const c of kartlar){
     const satirlarHam=(c && c.rows) || [];
