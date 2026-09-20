@@ -777,19 +777,7 @@ const DS_SISTEM_PROMPT =
 '{"cards":[{"box":{"x":0-1,"y":0-1,"w":0-1,"h":0-1},"rows":[[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9]]}]}\n'+
 'Each "rows" array must have exactly 3 rows, each row exactly 9 items (a number or null). If unsure of the exact box, give your best estimate.';
 
-async function deepseekKartOku(dataUrl, anahtar){
-  const govde={
-    model:'deepseek-flash',
-    temperature:0,
-    max_tokens:3000,
-    messages:[
-      {role:'system', content:DS_SISTEM_PROMPT},
-      {role:'user', content:[
-        {type:'text', text:'Read the bingo card(s) in this photo and return only the JSON described above.'},
-        {type:'image_url', image_url:{url:dataUrl}}
-      ]}
-    ]
-  };
+async function deepseekIstekAt(govde, anahtar){
   let yanit;
   try{
     yanit = await fetch('https://api.deepseek.com/chat/completions', {
@@ -801,10 +789,41 @@ async function deepseekKartOku(dataUrl, anahtar){
   if(!yanit.ok){
     let ayrinti='';
     try{ const j=await yanit.json(); ayrinti=(j&&j.error&&j.error.message)||''; }catch(e){}
-    throw new Error('API_HATASI:'+yanit.status+(ayrinti?(' '+ayrinti):''));
+    const hata=new Error('API_HATASI:'+yanit.status+(ayrinti?(' '+ayrinti):''));
+    hata.httpDurum=yanit.status;
+    throw hata;
   }
   const veri=await yanit.json();
-  const icerik = veri && veri.choices && veri.choices[0] && veri.choices[0].message && veri.choices[0].message.content;
+  return veri && veri.choices && veri.choices[0] && veri.choices[0].message && veri.choices[0].message.content;
+}
+
+async function deepseekKartOku(dataUrl, anahtar){
+  const mesajlar=[
+    {role:'system', content:DS_SISTEM_PROMPT},
+    {role:'user', content:[
+      {type:'text', text:'Read the bingo card(s) in this photo and return only the JSON described above.'},
+      {type:'image_url', image_url:{url:dataUrl}}
+    ]}
+  ];
+  /* bu görev basit veri çıkarma — düşünme modu (thinking) gereksiz: açık kalırsa token payı
+     düşünmeye gidip asıl JSON cevabı boş dönebiliyor. Önce kapatmayı deneriz; parametre bu
+     hesap/modelde tanınmıyorsa (400 hata) onsuz tekrar deneriz. */
+  let icerik;
+  try{
+    icerik = await deepseekIstekAt({model:'deepseek-flash', temperature:0, max_tokens:4000,
+      thinking:{type:'disabled'}, messages:mesajlar}, anahtar);
+  }catch(e){
+    if(e.httpDurum && e.httpDurum>=400 && e.httpDurum<500){
+      icerik = await deepseekIstekAt({model:'deepseek-flash', temperature:0, max_tokens:6000,
+        messages:mesajlar}, anahtar);
+    } else { throw e; }
+  }
+  if(!icerik){
+    /* thinking kapatma isteği kabul edildiği halde yine de boş döndüyse, daha büyük bir
+       token payıyla (düşünme açık kalsa bile sonuca yer kalsın diye) son bir kez deneriz. */
+    icerik = await deepseekIstekAt({model:'deepseek-flash', temperature:0, max_tokens:8000,
+      messages:mesajlar}, anahtar);
+  }
   if(!icerik) throw new Error('BOS_YANIT');
   return jsonAyikla(icerik);
 }
@@ -825,6 +844,7 @@ function taramaHataGoster(e){
   else if(m.indexOf('API_HATASI')>-1) toast(t('istekBasarisiz',{detay:m.replace('API_HATASI:','')}),'kotu');
   else if(m==='JSON_YOK'||e instanceof SyntaxError) toast(t('yanitAnlasilamadi'),'kotu');
   else if(m==='GÖRSEL_OKUNAMADI') toast(t('gorselAcilamadi'),'kotu');
+  else if(m==='BOS_YANIT') toast(t('yanitAnlasilamadi'),'kotu');
   else toast(t('kartOkunamadi',{detay:m}),'kotu');
 }
 
