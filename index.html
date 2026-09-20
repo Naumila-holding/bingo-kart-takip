@@ -72,6 +72,11 @@ body.buyuk .kartlar{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}
 .durum{font-size:12.5px;color:var(--soluk);font-weight:600;white-space:nowrap}
 .bingo{background:var(--sari);color:#3d2c00;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:800}
 #toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;align-items:center;width:calc(100% - 24px);max-width:420px;pointer-events:none}
+/* Sesli onay çubuğu: sayfa nereye kaydırılırsa kaydırılsın ekranın ALTINDA sabit kalır,
+   kullanıcı aramadan hemen görüp Evet/Hayır'a basabilsin diye. */
+.mic-onay-sabit{position:fixed;left:12px;right:12px;bottom:12px;z-index:45;max-width:420px;margin:0 auto;
+  background:var(--yesil-cok-ac);border:1.5px solid var(--yesil-ac);border-radius:12px;padding:12px;
+  box-shadow:0 6px 20px rgba(0,0,0,.22)}
 .tmsg{background:#1c2620;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.25);text-align:center}
 .tmsg.iyi{background:var(--yesil-ac)}
 .tmsg.kotu{background:var(--kirmizi)}
@@ -245,7 +250,7 @@ body.buyuk .fotokart .mark{width:40px;height:40px;border-width:4px}
       <button class="btn ikincil" id="micBtn" data-t="micBaslatBtn" onclick="micToggle()">🎤 Dinlemeyi başlat</button>
       <span class="durum" id="micDurum"></span>
     </div>
-    <div id="micOnay" hidden style="margin-top:10px;background:var(--yesil-cok-ac);border:1px solid var(--yesil-ac);border-radius:9px;padding:10px">
+    <div id="micOnay" class="mic-onay-sabit" hidden>
       <div id="micOnayMetin" style="font-weight:700;margin-bottom:8px"></div>
       <div class="satir">
         <button class="btn kucuk" data-t="micEvetBtn" onclick="micOnayEvet()">✔ Evet, işaretle</button>
