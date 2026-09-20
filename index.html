@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0f7b4f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Bingo Kart Takip</title>
+<style>
+:root{
+  --yesil:#0f7b4f; --yesil-ac:#18a469; --yesil-cok-ac:#e6f6ee;
+  --zemin:#f4f6f5; --kart:#ffffff; --cizgi:#d9e0dc; --yazi:#1c2620;
+  --soluk:#6c7d74; --kirmizi:#b8342a; --sari:#f0b429;
+  --hucre:34px; --hucre-font:14px; --ana-font:15px;
+}
+body.buyuk{ --hucre:46px; --hucre-font:19px; --ana-font:18px; }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--zemin);color:var(--yazi);font:var(--ana-font)/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--yesil);color:#fff;padding:10px 12px;position:sticky;top:0;z-index:20;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+header h1{margin:0 44px 8px 0;font-size:17px;font-weight:700;letter-spacing:.3px}
+.dilsec{position:absolute;top:10px;right:12px;display:flex;gap:3px}
+.dilsec button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer}
+.dilsec button.aktifdil{background:#fff;color:var(--yesil)}
+nav{display:flex;gap:6px}
+nav button{flex:1;padding:9px 4px;border:0;border-radius:8px;background:rgba(255,255,255,.18);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+nav button.aktif{background:#fff;color:var(--yesil)}
+main{padding:12px;max-width:1100px;margin:0 auto;padding-bottom:40px}
+section[hidden]{display:none!important}
+.kutu{background:var(--kart);border:1px solid var(--cizgi);border-radius:12px;padding:12px;margin-bottom:12px}
+.kutu h2{margin:0 0 10px;font-size:15px;font-weight:700}
+label{display:block;font-size:13px;color:var(--soluk);margin:8px 0 3px}
+input[type=text],input[type=password]{width:100%;padding:10px;border:1px solid var(--cizgi);border-radius:8px;font-size:16px;background:#fff;color:var(--yazi)}
+input[type=text]:focus,input[type=password]:focus{outline:2px solid var(--yesil-ac);border-color:var(--yesil-ac)}
+.btn{display:inline-block;padding:11px 16px;border:0;border-radius:9px;background:var(--yesil);color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+.btn:active{transform:translateY(1px)}
+.btn.ikincil{background:#fff;color:var(--yesil);border:1.5px solid var(--yesil)}
+.btn.sil{background:#fff;color:var(--kirmizi);border:1.5px solid var(--kirmizi)}
+.btn.kucuk{padding:6px 10px;font-size:13px}
+.satir{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ipucu{font-size:12.5px;color:var(--soluk);margin:6px 0 0}
+.hata{color:var(--kirmizi);font-size:13px;margin-top:6px;font-weight:600}
+.uyari{color:#8a6100;background:#fff6e0;border:1px solid #f0d99a;border-radius:8px;padding:6px 9px;font-size:13px;margin-top:6px}
+/* --- kart izgarasi --- */
+.grid{display:grid;grid-template-columns:repeat(9,var(--hucre));gap:2px;justify-content:start}
+.h{width:var(--hucre);height:var(--hucre);display:flex;align-items:center;justify-content:center;
+   border-radius:5px;font-size:var(--hucre-font);font-weight:700;background:#fff;border:1px solid var(--cizgi)}
+.h.bos{background:#eef1ef;border-color:#eef1ef}
+.h.isaretli{background:var(--yesil-ac);border-color:var(--yesil-ac);color:#fff;box-shadow:0 0 0 2px rgba(24,164,105,.25)}
+.h.yeni{animation:pop .45s ease}
+input.h{padding:0;text-align:center;font-family:inherit;color:var(--yazi);-moz-appearance:textfield}
+input.h::-webkit-outer-spin-button,input.h::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input.h.uyari{background:#fff6e0;border-color:#f0d99a}
+input.h:focus{outline:2px solid var(--yesil-ac);border-color:var(--yesil-ac)}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+/* --- oyun --- */
+#ekran{font-size:40px;font-weight:800;text-align:center;letter-spacing:2px;padding:6px;border:2px dashed var(--cizgi);border-radius:10px;min-height:56px;background:#fff}
+#ekran.bos{color:#c3ccc7}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}
+.pad button{padding:15px 0;font-size:21px;font-weight:700;border:1px solid var(--cizgi);background:#fff;color:var(--yazi);border-radius:10px;cursor:pointer}
+.pad button.onay{background:var(--yesil);color:#fff;border-color:var(--yesil);grid-column:span 2}
+.pad button.geri{background:#fff;color:var(--kirmizi);border-color:#e7bdb9}
+.gecmis{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.rozet{background:#fff;border:1px solid var(--cizgi);border-radius:999px;padding:3px 9px;font-size:13px;font-weight:700}
+.rozet.son{background:var(--yesil);color:#fff;border-color:var(--yesil)}
+.kartlar{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+body.buyuk .kartlar{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}
+.kartkutu{background:var(--kart);border:1px solid var(--cizgi);border-radius:11px;padding:9px;overflow-x:auto}
+.kartkutu.tamam{border-color:var(--yesil-ac);background:var(--yesil-cok-ac)}
+.kbas{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
+.kad{font-weight:700;font-size:14px}
+.durum{font-size:12.5px;color:var(--soluk);font-weight:600;white-space:nowrap}
+.bingo{background:var(--sari);color:#3d2c00;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:800}
+#toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;align-items:center;width:calc(100% - 24px);max-width:420px;pointer-events:none}
+.tmsg{background:#1c2620;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.25);text-align:center}
+.tmsg.iyi{background:var(--yesil-ac)}
+.tmsg.kotu{background:var(--kirmizi)}
+.bos-mesaj{color:var(--soluk);font-size:14px;text-align:center;padding:18px 6px}
+.ayar{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--cizgi);gap:10px}
+.ayar:last-child{border-bottom:0}
+.sw{position:relative;width:50px;height:28px;flex:none}
+.sw input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.sw span{position:absolute;inset:0;background:#cfd8d3;border-radius:999px;transition:.15s;pointer-events:none}
+.sw span:after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.15s}
+.sw input:checked + span{background:var(--yesil-ac)}
+.sw input:checked + span:after{left:25px}
+.durum-nokta{display:inline-block;width:8px;height:8px;border-radius:50%;background:#c3ccc7;margin-right:5px}
+.durum-nokta.acik{background:var(--yesil-ac)}
+/* --- fotoğraf üzerinde işaretleme --- */
+.fotokart-duzenle{position:relative;width:100%;max-width:440px;margin:0 auto;touch-action:manipulation}
+.fotokart-duzenle img{width:100%;display:block;border-radius:8px;pointer-events:none;user-select:none;-webkit-user-select:none}
+.fotokart-duzenle input.h{position:absolute;width:30px;height:30px;line-height:27px;border-radius:50%;
+  background:rgba(255,255,255,.94);border:1.5px solid var(--yesil-ac);font-weight:700;font-size:13px;padding:0}
+.fotokart-duzenle input.h.uyari{border-color:#e0a100;background:rgba(255,246,224,.97)}
+body.buyuk .fotokart-duzenle input.h{width:40px;height:40px;line-height:37px;font-size:16px}
+.fotokart{position:relative;width:100%}
+.fotokart img{width:100%;display:block;border-radius:8px}
+.fotokart .mark{position:absolute;width:16px;height:16px;transform:translate(-50%,-50%);
+  background:var(--yesil-ac);border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.92)}
+.fotokart .mark.yeni{animation:pop .45s ease}
+body.buyuk .fotokart .mark{width:22px;height:22px}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<header>
+  <div class="dilsec">
+    <button id="uiDilTR" onclick="uiDilSec('tr')">TR</button>
+    <button id="uiDilEN" onclick="uiDilSec('en')">EN</button>
+  </div>
+  <h1>🎱 <span data-t="appTitle">Bingo Kart Takip</span> <span style="font-weight:400;opacity:.75;font-size:12px">v2</span></h1>
+  <nav>
+    <button id="tKartlar" class="aktif" onclick="git('kartlar')" data-t="navKartlar">Kartlarım</button>
+    <button id="tOyun" onclick="git('oyun')" data-t="navOyun">Oyun</button>
+    <button id="tAyar" onclick="git('ayar')" data-t="navAyar">Ayarlar</button>
+  </nav>
+</header>
+
+<main>
+<!-- ================= KARTLAR ================= -->
+<section id="sKartlar">
+  <div class="kutu">
+    <h2 data-t="fotoBaslikH2">📷 Fotoğraf ile kart oku (AI — DeepSeek)</h2>
+    <p class="ipucu" data-t="fotoAciklama">Kart(lar)ın net, düz açılı, iyi ışıklı bir fotoğrafını çek. DeepSeek sayıları
+      okur; hiçbir şey senin onayın olmadan kaydedilmez — okunanları aşağıda tek tek kontrol edip
+      "Kartı kaydet" e basarsın, yanlış varsa elle düzeltirsin.</p>
+    <input type="file" id="fotoGirdi" accept="image/*" capture="environment" style="display:none" onchange="fotoSecildi(event)">
+    <button class="btn" id="fotoBtn" data-t="fotoButon" onclick="fotoBaslat()">📷 Fotoğraf ile kart oku (AI)</button>
+    <p class="ipucu" data-t="fotoMaliyetNotu">Her fotoğraf taraması DeepSeek kotandan/bakiyenden yaklaşık 1 istek düşer.</p>
+  </div>
+
+  <div class="kutu" id="taramaBanner" hidden>
+    <div id="taramaMetin" style="font-weight:700;margin-bottom:8px"></div>
+    <label data-t="kartAdLabel">Kart adı (istersen boş bırak)</label>
+    <input type="text" id="taramaAdInput" data-t-ph="taramaAdPh" placeholder="Taranan Kart 1">
+    <p class="ipucu" data-t-html="taramaAciklama" style="margin-top:10px">Hücreler fotoğraftaki <b>tam olarak aynı yerde</b> gösteriliyor.
+      Bir hücreye dokun, gerekirse sayıyı düzelt ya da sil (boş bırakırsan o hücre boş kalır).
+      <span style="color:#8a6100;font-weight:600">Sarı</span> hücreler standart sütun aralığıyla
+      uyuşmuyor — muhtemelen yanlış okunmuş, fotoğrafına bakıp kontrol et.</p>
+    <div id="taramaGrid" style="margin-top:10px"></div>
+    <div id="taramaUyarilar"></div>
+    <div class="satir" style="margin-top:11px">
+      <button class="btn" data-t="taramaKaydetBtn" onclick="taramaKaydet()">✔ Bu kartı kaydet</button>
+      <button class="btn ikincil kucuk" data-t="taramaAtlaBtn" onclick="taramaAtla()">Atla →</button>
+      <button class="btn sil kucuk" data-t="taramaIptalBtn" onclick="taramaIptal()">İptal</button>
+    </div>
+  </div>
+
+  <div class="kutu">
+    <h2 data-t="elleH2">Yeni kart ekle (elle)</h2>
+    <p class="ipucu" data-t="elleAciklama">Kartın her satırında 5 sayı vardır. Sayıları aralarında boşluk bırakarak yaz —
+      uygulama doğru sütuna kendisi yerleştirir. (Sütun kuralı: 1–9, 10–19, … 80–90)</p>
+    <label data-t="kartAdLabel">Kart adı (istersen boş bırak)</label>
+    <input type="text" id="kAd" data-t-ph="kartAdPh" placeholder="Kart 1">
+    <label data-t="satir1Label">1. satır — 5 sayı</label>
+    <input type="text" id="k0" inputmode="numeric" data-t-ph="satir1Ph" placeholder="örn: 4 17 23 56 81" oninput="onizle()">
+    <label data-t="satir2Label">2. satır — 5 sayı</label>
+    <input type="text" id="k1" inputmode="numeric" data-t-ph="satir2Ph" placeholder="örn: 11 28 34 62 75" oninput="onizle()">
+    <label data-t="satir3Label">3. satır — 5 sayı</label>
+    <input type="text" id="k2" inputmode="numeric" data-t-ph="satir3Ph" placeholder="örn: 7 19 45 58 90" oninput="onizle()">
+    <div id="onizleme" style="margin-top:10px"></div>
+    <div id="formHata"></div>
+    <div class="satir" style="margin-top:11px">
+      <button class="btn" data-t="kartKaydetBtn" onclick="kartKaydet()">✔ Kartı kaydet</button>
+      <button class="btn ikincil" data-t="ornekKartBtn" onclick="ornekKart()">🎲 Örnek kart ekle (test)</button>
+      <button class="btn ikincil" data-t="temizleBtn" onclick="formTemizle()">Temizle</button>
+    </div>
+    <p class="ipucu" data-t="sesliVarNotu">🎤 Sesli giriş ve 📷 fotoğraf ile okuma da mevcut — Oyun ekranında ve yukarıda ↑.</p>
+  </div>
+
+  <div class="kutu">
+    <h2><span data-t="kayitliKartlarH2">Kayıtlı kartlar</span> (<span id="kartSayisi">0</span>)</h2>
+    <div id="kartListe"></div>
+  </div>
+</section>
+
+<!-- ================= OYUN ================= -->
+<section id="sOyun" hidden>
+  <div class="kutu">
+    <h2 data-t="oyunGirH2">Çağrılan sayıyı gir</h2>
+    <div id="ekran" class="bos">--</div>
+    <div class="pad">
+      <button onclick="tus('1')">1</button><button onclick="tus('2')">2</button><button onclick="tus('3')">3</button>
+      <button onclick="tus('4')">4</button><button onclick="tus('5')">5</button><button onclick="tus('6')">6</button>
+      <button onclick="tus('7')">7</button><button onclick="tus('8')">8</button><button onclick="tus('9')">9</button>
+      <button class="geri" onclick="sil()">⌫</button><button onclick="tus('0')">0</button>
+      <button class="onay" data-t="onaylaBtn" onclick="onayla()" style="grid-column:1/-1">ONAYLA</button>
+    </div>
+    <div class="satir" style="margin-top:10px">
+      <button class="btn ikincil kucuk" data-t="geriAlBtn" onclick="geriAl()">↩ Son sayıyı geri al</button>
+      <button class="btn sil kucuk" data-t="sifirlaBtn" onclick="oyunSifirla()">🗑 Oyunu sıfırla</button>
+      <span class="durum" id="cagriSayisi"></span>
+    </div>
+    <div class="gecmis" id="gecmis"></div>
+  </div>
+
+  <div class="kutu">
+    <h2 data-t="micH2">🎤 Sesli dinleme (opsiyonel)</h2>
+    <p class="ipucu" id="micDestekYok" data-t="micDestekYokMetin" hidden>Bu tarayıcı sesli dinlemeyi desteklemiyor (iPhone/Safari'de olabilir) — elle girişi kullan.</p>
+    <p class="ipucu" data-t-html="micAciklama">Duyduğu sayıyı <b>hemen işaretlemez</b> — önce sana sorar, sen "Evet" dedikten sonra işaretlenir.
+      Ses tarayıcının kendi tanıma servisiyle işlenir, kaydedilmez.</p>
+    <div class="satir">
+      <button class="btn ikincil" id="micBtn" data-t="micBaslatBtn" onclick="micToggle()">🎤 Dinlemeyi başlat</button>
+      <span class="durum" id="micDurum"></span>
+    </div>
+    <div id="micOnay" hidden style="margin-top:10px;background:var(--yesil-cok-ac);border:1px solid var(--yesil-ac);border-radius:9px;padding:10px">
+      <div id="micOnayMetin" style="font-weight:700;margin-bottom:8px"></div>
+      <div class="satir">
+        <button class="btn kucuk" data-t="micEvetBtn" onclick="micOnayEvet()">✔ Evet, işaretle</button>
+        <button class="btn ikincil kucuk" data-t="micHayirBtn" onclick="micOnayHayir()">✖ Hayır</button>
+      </div>
+    </div>
+    <div id="micGecmis" class="ipucu"></div>
+  </div>
+
+  <div class="kartlar" id="oyunKartlar"></div>
+</section>
+
+<!-- ================= AYARLAR ================= -->
+<section id="sAyar" hidden>
+  <div class="kutu">
+    <h2 data-t="ayarlarH2">Ayarlar</h2>
+    <div class="ayar"><div><span data-t="sesBaslik">🔊 Ses uyarısı</span><div class="ipucu" data-t="sesAciklama">Çizgi/bingo olunca sesli uyarır</div></div>
+      <label class="sw"><input type="checkbox" id="aSes" onchange="ayarDegis()"><span></span></label></div>
+    <div class="ayar"><div><span data-t="titBaslik">📳 Titreşim</span><div class="ipucu" data-t="titAciklama">Telefonlarda çalışır</div></div>
+      <label class="sw"><input type="checkbox" id="aTit" onchange="ayarDegis()"><span></span></label></div>
+    <div class="ayar"><div><span data-t="buyukBaslik">🔎 Büyük görünüm</span><div class="ipucu" data-t="buyukAciklama">Kutucuklar ve yazılar büyür</div></div>
+      <label class="sw"><input type="checkbox" id="aBuyuk" onchange="ayarDegis()"><span></span></label></div>
+    <div class="ayar"><div><span data-t="sesliDilBaslik">🎤 Sesli tanıma dili</span><div class="ipucu" data-t="sesliDilAciklama">Çağrıcı hangi dilde söylüyorsa onu seç</div></div>
+      <span class="satir">
+        <button class="btn kucuk" id="dilTR" data-t="dilTRBtn" onclick="dilSec('tr-TR')">Türkçe</button>
+        <button class="btn ikincil kucuk" id="dilEN" data-t="dilENBtn" onclick="dilSec('en-GB')">İngilizce</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="kutu">
+    <h2 data-t="aiH2">🤖 AI Ajanı (DeepSeek)</h2>
+    <p class="ipucu"><span class="durum-nokta" id="dsNokta"></span><span id="dsDurum" data-t="dsYokMetin">Anahtar girilmedi — AI özellikleri kapalı.</span></p>
+    <label data-t="dsLabel">DeepSeek API Anahtarı</label>
+    <input type="password" id="dsAnahtar" placeholder="sk-..." autocomplete="off" oninput="dsKaydet()">
+    <p class="ipucu" data-t-html="dsAciklama">
+      Bu anahtar <b>sadece bu telefonun/tarayıcının hafızasında</b> saklanır; hiçbir sunucuya
+      gönderilmez, kimseyle paylaşılmaz. Şu an <b>"Kartlarım" ekranındaki fotoğraf ile kart okuma</b>
+      bu anahtarı kullanıyor (fotoğraf doğrudan tarayıcından DeepSeek'e gönderilir). Sesli sayı
+      onayı da aynı anahtarı kullanır. Her fotoğraf taraması kendi
+      DeepSeek kotandan/bakiyenden yaklaşık 1 istek düşer.
+    </p>
+    <button class="btn sil kucuk" data-t="dsSilBtn" onclick="dsSil()">Anahtarı sil</button>
+  </div>
+
+  <div class="kutu">
+    <h2 data-t="veriH2">Veri</h2>
+    <p class="ipucu" data-t="veriAciklama">Kartlar ve çağrılan sayılar da sadece bu telefonun/tarayıcının içinde saklanır. Hiçbir yere gönderilmez.</p>
+    <div class="satir" style="margin-top:8px">
+      <button class="btn sil" data-t="sayilariTemizleBtn" onclick="oyunSifirla()">Çağrılan sayıları temizle</button>
+      <button class="btn sil" data-t="tumKartlariSilBtn" onclick="hepsiniSil()">Tüm kartları sil</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+/* ================== VERİ ================== */
+const LS='bingoSnap.v1';
+const LS_DS='bingoSnap.dsKey'; /* DeepSeek anahtari ayri anahtarda tutulur, dilersen kolayca ayiklayabilesin */
+let S={cards:[],called:[],anons:{},set:{ses:true,tit:true,buyuk:false,dil:'tr-TR',uiDil:'tr'},sayac:1};
+let sonEklenen=null;
+
+/* ================== ÇEVİRİ (TR/EN arayüz dili) ================== */
+const T={
+ tr:{
+  appTitle:'Bingo Kart Takip', navKartlar:'Kartlarım', navOyun:'Oyun', navAyar:'Ayarlar',
+  fotoBaslikH2:'📷 Fotoğraf ile kart oku (AI — DeepSeek)',
+  fotoAciklama:'Kart(lar)ın net, düz açılı, iyi ışıklı bir fotoğrafını çek. DeepSeek sayıları okur; hiçbir şey senin onayın olmadan kaydedilmez — okunanları aşağıda tek tek kontrol edip "Kartı kaydet" e basarsın, yanlış varsa elle düzeltirsin.',
+  fotoButon:'📷 Fotoğraf ile kart oku (AI)',
+  fotoMaliyetNotu:'Her fotoğraf taraması DeepSeek kotandan/bakiyenden yaklaşık 1 istek düşer.',
+  kartAdLabel:'Kart adı (istersen boş bırak)', kartAdPh:'Kart 1', taramaAdPh:'Taranan Kart 1',
+  taramaAciklama:'Hücreler fotoğraftaki <b>tam olarak aynı yerde</b> gösteriliyor. Bir hücreye dokun, gerekirse sayıyı düzelt ya da sil (boş bırakırsan o hücre boş kalır). <span style="color:#8a6100;font-weight:600">Sarı</span> hücreler standart sütun aralığıyla uyuşmuyor — muhtemelen yanlış okunmuş, fotoğrafına bakıp kontrol et.',
+  taramaKaydetBtn:'✔ Bu kartı kaydet', taramaAtlaBtn:'Atla →', taramaIptalBtn:'İptal',
+  elleH2:'Yeni kart ekle (elle)',
+  elleAciklama:'Kartın her satırında 5 sayı vardır. Sayıları aralarında boşluk bırakarak yaz — uygulama doğru sütuna kendisi yerleştirir. (Sütun kuralı: 1–9, 10–19, … 80–90)',
+  satir1Label:'1. satır — 5 sayı', satir2Label:'2. satır — 5 sayı', satir3Label:'3. satır — 5 sayı',
+  satir1Ph:'örn: 4 17 23 56 81', satir2Ph:'örn: 11 28 34 62 75', satir3Ph:'örn: 7 19 45 58 90',
+  kartKaydetBtn:'✔ Kartı kaydet', ornekKartBtn:'🎲 Örnek kart ekle (test)', temizleBtn:'Temizle',
+  sesliVarNotu:'🎤 Sesli giriş ve 📷 fotoğraf ile okuma da mevcut — Oyun ekranında ve yukarıda ↑.',
+  kayitliKartlarH2:'Kayıtlı kartlar',
+  oyunGirH2:'Çağrılan sayıyı gir', onaylaBtn:'ONAYLA',
+  geriAlBtn:'↩ Son sayıyı geri al', sifirlaBtn:'🗑 Oyunu sıfırla',
+  micH2:'🎤 Sesli dinleme (opsiyonel)',
+  micDestekYokMetin:"Bu tarayıcı sesli dinlemeyi desteklemiyor (iPhone/Safari'de olabilir) — elle girişi kullan.",
+  micAciklama:'Duyduğu sayıyı <b>hemen işaretlemez</b> — önce sana sorar, sen "Evet" dedikten sonra işaretlenir. Ses tarayıcının kendi tanıma servisiyle işlenir, kaydedilmez.',
+  micBaslatBtn:'🎤 Dinlemeyi başlat', micDurdurBtn:'⏹ Dinlemeyi durdur', micDinleniyor:'dinleniyor...',
+  micEvetBtn:'✔ Evet, işaretle', micHayirBtn:'✖ Hayır',
+  ayarlarH2:'Ayarlar',
+  sesBaslik:'🔊 Ses uyarısı', sesAciklama:'Çizgi/bingo olunca sesli uyarır',
+  titBaslik:'📳 Titreşim', titAciklama:'Telefonlarda çalışır',
+  buyukBaslik:'🔎 Büyük görünüm', buyukAciklama:'Kutucuklar ve yazılar büyür',
+  sesliDilBaslik:'🎤 Sesli tanıma dili', sesliDilAciklama:'Çağrıcı hangi dilde söylüyorsa onu seç',
+  dilTRBtn:'Türkçe', dilENBtn:'İngilizce',
+  aiH2:'🤖 AI Ajanı (DeepSeek)',
+  dsVarMetin:'Anahtar kayıtlı — fotoğraf ile kart okuma açık.', dsYokMetin:'Anahtar girilmedi — AI özellikleri kapalı.',
+  dsLabel:'DeepSeek API Anahtarı',
+  dsAciklama:'Bu anahtar <b>sadece bu telefonun/tarayıcının hafızasında</b> saklanır; hiçbir sunucuya gönderilmez, kimseyle paylaşılmaz. Şu an <b>"Kartlarım" ekranındaki fotoğraf ile kart okuma</b> bu anahtarı kullanıyor (fotoğraf doğrudan tarayıcından DeepSeek\'e gönderilir). Her fotoğraf taraması kendi DeepSeek kotandan/bakiyenden yaklaşık 1 istek düşer.',
+  dsSilBtn:'Anahtarı sil',
+  veriH2:'Veri', veriAciklama:'Kartlar ve çağrılan sayılar da sadece bu telefonun/tarayıcının içinde saklanır. Hiçbir yere gönderilmez.',
+  sayilariTemizleBtn:'Çağrılan sayıları temizle', tumKartlariSilBtn:'Tüm kartları sil',
+  onceSayilariYaz:'Önce sayıları yaz.', onceHatalariDuzelt:'Önce yukarıdaki hataları düzelt.',
+  kartAdVarsayilan:'Kart {n}', kartKaydedildi:'"{ad}" kaydedildi ✔', kartSilOnay:'"{ad}" silinsin mi?',
+  kartFormaAlindi:'Kart forma alındı — düzeltip tekrar kaydet.',
+  zatenKartYok:'Zaten kart yok.', tumKartlarSilOnay:'TÜM kartlar silinsin mi? Bu geri alınamaz.', tumKartlarSilindi:'Tüm kartlar silindi.',
+  ornekOlusturulamadi:'Oluşturulamadı, tekrar dene.', ornekFormaYazildi:'Örnek kart forma yazıldı — "Kartı kaydet" e bas.',
+  henuzKartYok:"Henüz kart yok.<br>Yukarıdan bir kart ekle veya 'Örnek kart' ile dene.",
+  duzenleBtn:'Düzenle', silBtn:'Sil',
+  sayiCagrildi:'{n} sayı çağrıldı', henuzSayiGirilmedi:'Henüz sayı girilmedi.',
+  onceKartEkle:"Önce 'Kartlarım' bölümünden kart ekle.", bingoRozet:'BINGO!', satirDurum:'Satır: {n}/3',
+  sayiAraligiUyari:'1 ile 90 arasında bir sayı gir.', zatenGirilmisti:'{n} zaten girilmişti.',
+  isaretlendi:'{n} işaretlendi ✔', hicKartindaYok:'{n} hiçbir kartında yok.',
+  geriAlinacakYok:'Geri alınacak sayı yok.', geriAlindi:'{n} geri alındı.',
+  zatenTemiz:'Zaten temiz.', oyunSifirlaOnay:'Çağrılan tüm sayılar silinsin mi? (Kartlar durur)', oyunSifirlandi:'Oyun sıfırlandı.',
+  satirTamam:'📏 {ad}: {n}. satır TAMAM!', kartTamamBingo:'🎉 {ad}: BINGO! Kart tamamen doldu!',
+  onceAnahtarGir:'Önce Ayarlar → DeepSeek API Anahtarı gir.',
+  fotoHazirlaniyor:'⏳ Fotoğraf hazırlanıyor...', deepseekOkuyor:'⏳ DeepSeek kart okuyor... (birkaç saniye sürebilir)',
+  agHatasi:"İnternete veya DeepSeek'e ulaşılamadı. Bağlantını kontrol edip tekrar dene.",
+  anahtarGecersiz:"DeepSeek anahtarı geçersiz görünüyor. Ayarlar'dan kontrol et.",
+  kotaDoldu:'DeepSeek kotan/hızın doldu, biraz sonra tekrar dene.',
+  istekBasarisiz:'DeepSeek isteği başarısız oldu ({detay}). Elle girmeyi dene.',
+  yanitAnlasilamadi:'DeepSeek yanıtı anlaşılamadı. Daha net bir fotoğraf dene ya da elle gir.',
+  gorselAcilamadi:'Fotoğraf açılamadı, başka bir fotoğraf dene.', kartOkunamadi:'Kart okunamadı: {detay}',
+  okunakliKartYok:'Fotoğrafta okunaklı kart bulunamadı. Daha net/düz açılı bir fotoğraf dene ya da elle gir.',
+  kartTarandi:'{n} kart tarandı — kontrol edip kaydet.', taramaAdVarsayilan:'Taranan Kart {n}',
+  taramaMetinFoto:'🔎 Taranan kart {i}/{n} — fotoğraf üzerindeki hücrelere dokunup kontrol et/düzelt, sonra kaydet.',
+  taramaMetinGrid:'🔎 Taranan kart {i}/{n} — sayıları kontrol et/düzelt, sonra kaydet.',
+  degerGecersiz:'{i}. satır: {v} geçersiz — 1 ile 90 arasında olmalı.', ikiKezGeciyor:'{v} kartta iki kez geçiyor.',
+  sutunUyari:'{i}. satır {c}. sütun: {v} — bu sütunda genelde {aralik} olur, kontrol et.',
+  kartHicSayiYok:'Kartta hiç sayı yok.', onceHatayiDuzelt:'Önce hatayı düzelt: {hata}',
+  taramaIptalEdildi:'Tarama iptal edildi.', taramaTamamlandi:'Taranan tüm kartlar tamamlandı ✔',
+  dsAnahtarSilindi:'DeepSeek anahtarı silindi.',
+  micDesteklenmiyor:'Bu tarayıcı sesli dinlemeyi desteklemiyor. Elle girmeyi kullan.',
+  micIzinYok:'Mikrofon izni verilmedi.', micBaslatilamadi:'Mikrofon başlatılamadı.',
+  micBuTarayiciYok:'🎤 Bu tarayıcı desteklemiyor',
+  micAnlasilamadi:'🎤 "{metin}" → anlaşılamadı', micDuyuldu:'🎤 "{metin}" → {n}',
+  micZatenIsaretli:'{n} zaten işaretliydi (mikrofon duydu).', micOnaySoru:'🎤 "{n}" duyuldu — işaretleyeyim mi?'
+ },
+ en:{
+  appTitle:'Bingo Card Tracker', navKartlar:'My Cards', navOyun:'Play', navAyar:'Settings',
+  fotoBaslikH2:'📷 Scan card from photo (AI — DeepSeek)',
+  fotoAciklama:'Take a clear, straight-on, well-lit photo of your card(s). DeepSeek reads the numbers; nothing is saved without your approval — check each scanned card below and press "Save card", correct it by hand if anything is wrong.',
+  fotoButon:'📷 Scan card from photo (AI)',
+  fotoMaliyetNotu:'Each photo scan uses about 1 request from your DeepSeek quota/balance.',
+  kartAdLabel:'Card name (optional)', kartAdPh:'Card 1', taramaAdPh:'Scanned Card 1',
+  taramaAciklama:'Cells are shown in <b>the exact same spot</b> as on the photo. Tap a cell to fix the number or clear it (leave it blank to keep the cell empty). <span style="color:#8a6100;font-weight:600">Yellow</span> cells don\'t match the standard column range — likely misread, check against the photo.',
+  taramaKaydetBtn:'✔ Save this card', taramaAtlaBtn:'Skip →', taramaIptalBtn:'Cancel',
+  elleH2:'Add new card (manual)',
+  elleAciklama:'Each row of a card has 5 numbers. Type them separated by spaces — the app places each one in the right column itself. (Column rule: 1–9, 10–19, … 80–90)',
+  satir1Label:'Row 1 — 5 numbers', satir2Label:'Row 2 — 5 numbers', satir3Label:'Row 3 — 5 numbers',
+  satir1Ph:'e.g: 4 17 23 56 81', satir2Ph:'e.g: 11 28 34 62 75', satir3Ph:'e.g: 7 19 45 58 90',
+  kartKaydetBtn:'✔ Save card', ornekKartBtn:'🎲 Add example card (test)', temizleBtn:'Clear',
+  sesliVarNotu:'🎤 Voice input and 📷 photo scan are also available — on the Play screen and above ↑.',
+  kayitliKartlarH2:'Saved cards',
+  oyunGirH2:'Enter the called number', onaylaBtn:'CONFIRM',
+  geriAlBtn:'↩ Undo last number', sifirlaBtn:'🗑 Reset game',
+  micH2:'🎤 Voice listening (optional)',
+  micDestekYokMetin:"This browser doesn't support voice listening (common on iPhone/Safari) — use manual entry.",
+  micAciklama:'It doesn\'t mark a number right away — it asks you first, and only marks it once you say "Yes". Audio is processed by the browser\'s own recognition service, not recorded.',
+  micBaslatBtn:'🎤 Start listening', micDurdurBtn:'⏹ Stop listening', micDinleniyor:'listening...',
+  micEvetBtn:'✔ Yes, mark it', micHayirBtn:'✖ No',
+  ayarlarH2:'Settings',
+  sesBaslik:'🔊 Sound alert', sesAciklama:'Plays a sound on line/bingo',
+  titBaslik:'📳 Vibration', titAciklama:'Works on phones',
+  buyukBaslik:'🔎 Large view', buyukAciklama:'Bigger cells and text',
+  sesliDilBaslik:'🎤 Voice recognition language', sesliDilAciklama:'Pick the language the caller speaks',
+  dilTRBtn:'Turkish', dilENBtn:'English',
+  aiH2:'🤖 AI Agent (DeepSeek)',
+  dsVarMetin:'Key saved — photo card scanning is on.', dsYokMetin:'No key entered — AI features are off.',
+  dsLabel:'DeepSeek API Key',
+  dsAciklama:'This key is stored <b>only on this phone/browser</b>; it is never sent to a server or shared with anyone. Right now <b>photo card scanning on the "My Cards" screen</b> uses this key (the photo is sent straight from your browser to DeepSeek). Each photo scan uses about 1 request from your DeepSeek quota/balance.',
+  dsSilBtn:'Remove key',
+  veriH2:'Data', veriAciklama:'Cards and called numbers are also stored only on this phone/browser. Nothing is sent anywhere.',
+  sayilariTemizleBtn:'Clear called numbers', tumKartlariSilBtn:'Delete all cards',
+  onceSayilariYaz:'Enter the numbers first.', onceHatalariDuzelt:'Fix the errors above first.',
+  kartAdVarsayilan:'Card {n}', kartKaydedildi:'"{ad}" saved ✔', kartSilOnay:'Delete "{ad}"?',
+  kartFormaAlindi:'Card loaded into the form — fix it and save again.',
+  zatenKartYok:'There are no cards yet.', tumKartlarSilOnay:'Delete ALL cards? This cannot be undone.', tumKartlarSilindi:'All cards deleted.',
+  ornekOlusturulamadi:"Couldn't generate one, try again.", ornekFormaYazildi:'Example card filled into the form — press "Save card".',
+  henuzKartYok:"No cards yet.<br>Add one above, or try 'Example card'.",
+  duzenleBtn:'Edit', silBtn:'Delete',
+  sayiCagrildi:'{n} numbers called', henuzSayiGirilmedi:'No numbers entered yet.',
+  onceKartEkle:"Add a card from 'My Cards' first.", bingoRozet:'BINGO!', satirDurum:'Row: {n}/3',
+  sayiAraligiUyari:'Enter a number between 1 and 90.', zatenGirilmisti:'{n} was already entered.',
+  isaretlendi:'{n} marked ✔', hicKartindaYok:"{n} isn't on any of your cards.",
+  geriAlinacakYok:'No number to undo.', geriAlindi:'{n} undone.',
+  zatenTemiz:'Already clear.', oyunSifirlaOnay:'Delete all called numbers? (Cards will reset)', oyunSifirlandi:'Game reset.',
+  satirTamam:'📏 {ad}: row {n} DONE!', kartTamamBingo:'🎉 {ad}: BINGO! Card fully complete!',
+  onceAnahtarGir:'First enter your DeepSeek API key in Settings.',
+  fotoHazirlaniyor:'⏳ Preparing photo...', deepseekOkuyor:"⏳ DeepSeek is reading the card... (can take a few seconds)",
+  agHatasi:"Couldn't reach the internet or DeepSeek. Check your connection and try again.",
+  anahtarGecersiz:'Your DeepSeek key looks invalid. Check it in Settings.',
+  kotaDoldu:'Your DeepSeek quota/rate limit is reached, try again shortly.',
+  istekBasarisiz:'The DeepSeek request failed ({detay}). Try manual entry.',
+  yanitAnlasilamadi:"Couldn't understand DeepSeek's reply. Try a clearer photo or enter manually.",
+  gorselAcilamadi:"Couldn't open the photo, try a different one.", kartOkunamadi:"Couldn't read the card: {detay}",
+  okunakliKartYok:'No readable card found in the photo. Try a clearer, straighter photo or enter manually.',
+  kartTarandi:'{n} card(s) scanned — check and save.', taramaAdVarsayilan:'Scanned Card {n}',
+  taramaMetinFoto:'🔎 Scanned card {i}/{n} — tap the cells over the photo to check/fix, then save.',
+  taramaMetinGrid:'🔎 Scanned card {i}/{n} — check/fix the numbers, then save.',
+  degerGecersiz:'Row {i}: {v} is invalid — must be between 1 and 90.', ikiKezGeciyor:'{v} appears twice on the card.',
+  sutunUyari:'Row {i} column {c}: {v} — this column is usually {aralik}, please check.',
+  kartHicSayiYok:'The card has no numbers.', onceHatayiDuzelt:'Fix this first: {hata}',
+  taramaIptalEdildi:'Scan cancelled.', taramaTamamlandi:'All scanned cards are done ✔',
+  dsAnahtarSilindi:'DeepSeek key removed.',
+  micDesteklenmiyor:"This browser doesn't support voice listening. Use manual entry.",
+  micIzinYok:'Microphone permission denied.', micBaslatilamadi:"Couldn't start the microphone.",
+  micBuTarayiciYok:'🎤 Not supported on this browser',
+  micAnlasilamadi:'🎤 "{metin}" → not understood', micDuyuldu:'🎤 "{metin}" → {n}',
+  micZatenIsaretli:'{n} was already marked (heard by mic).', micOnaySoru:'🎤 "{n}" heard — mark it?'
+ }
+};
+let UI_DIL='tr';
+function t(anahtar, degerler){
+  let s=(T[UI_DIL]&&T[UI_DIL][anahtar]) || (T.tr[anahtar]) || anahtar;
+  if(degerler){ for(const k in degerler){ s=s.split('{'+k+'}').join(degerler[k]); } }
+  return s;
+}
+function ceviriUygula(){
+  document.querySelectorAll('[data-t]').forEach(function(el){ el.textContent=t(el.getAttribute('data-t')); });
+  document.querySelectorAll('[data-t-html]').forEach(function(el){ el.innerHTML=t(el.getAttribute('data-t-html')); });
+  document.querySelectorAll('[data-t-ph]').forEach(function(el){ el.placeholder=t(el.getAttribute('data-t-ph')); });
+  document.documentElement.lang=UI_DIL;
+  uiDilBtnGuncelle();
+}
+function uiDilBtnGuncelle(){
+  uiDilTR.className = (UI_DIL==='tr') ? 'aktifdil' : '';
+  uiDilEN.className = (UI_DIL==='en') ? 'aktifdil' : '';
+}
+function uiDilSec(kod){
+  UI_DIL=kod; S.set.uiDil=kod; kaydet(); ceviriUygula(); dsDurumCiz();
+  kartListeCiz(); if(!sOyun.hidden) ciz();
+}
+
+function yukle(){ try{ const r=localStorage.getItem(LS); if(r){ const o=JSON.parse(r);
+  S.cards=o.cards||[]; S.called=o.called||[]; S.anons=o.anons||{};
+  S.set=Object.assign(S.set,o.set||{}); S.sayac=o.sayac||(S.cards.length+1); } }catch(e){}
+  UI_DIL=S.set.uiDil||'tr'; }
+function kaydet(){ try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
+
+/* sütun kuralı: 1-9 -> 0, 10-19 -> 1, ... 80-90 -> 8 */
+function sutun(n){ return n<=9 ? 0 : (n>=80 ? 8 : Math.floor(n/10)); }
+function isaretli(n){ return S.called.indexOf(n)>-1; }
+
+/* ================== EKRAN GEÇİŞ ================== */
+function git(ad){
+  sKartlar.hidden = ad!=='kartlar'; sOyun.hidden = ad!=='oyun'; sAyar.hidden = ad!=='ayar';
+  tKartlar.className = ad==='kartlar'?'aktif':''; tOyun.className = ad==='oyun'?'aktif':''; tAyar.className = ad==='ayar'?'aktif':'';
+  if(ad==='oyun') ciz();
+  if(ad!=='oyun' && micAcik) micDurdur(); /* baska ekrana gecince mikrofonu kapat — gizlilik + pil */
+  window.scrollTo(0,0);
+}
+
+/* ================== KART OLUŞTURMA ================== */
+function sayilariAyikla(t){ const m=(t||'').match(/\d+/g); return m?m.map(Number):[]; }
+
+function kartKur(satirlar){
+  const g=[Array(9).fill(null),Array(9).fill(null),Array(9).fill(null)];
+  const hata=[], uyari=[], hepsi=[];
+  for(let i=0;i<3;i++){
+    const ns=sayilariAyikla(satirlar[i]);
+    if(ns.length!==5) hata.push((UI_DIL==='en')?('Row '+(i+1)+' needs 5 numbers (currently '+ns.length+').'):((i+1)+'. satırda 5 sayı olmalı (şu an '+ns.length+' sayı var).'));
+    for(const n of ns){
+      if(n<1||n>90){ hata.push(t('degerGecersiz',{i:i+1,v:n})); continue; }
+      if(hepsi.indexOf(n)>-1){ hata.push(t('ikiKezGeciyor',{v:n})); continue; }
+      const c=sutun(n);
+      if(g[i][c]!==null){ hata.push((UI_DIL==='en')?('Row '+(i+1)+': '+g[i][c]+' and '+n+' fall in the same column — one may be wrong.'):((i+1)+'. satırda '+g[i][c]+' ile '+n+' aynı sütuna düşüyor — biri yanlış olabilir.')); continue; }
+      g[i][c]=n; hepsi.push(n);
+    }
+  }
+  for(let c=0;c<9;c++){ let k=0; for(let i=0;i<3;i++) if(g[i][c]!==null) k++;
+    if(k>3) uyari.push((UI_DIL==='en')?('Column '+(c+1)+' has more than 3 numbers — check the card.'):((c+1)+". sütunda 3'ten fazla sayı var — kartı bir kontrol et.")); }
+  return {grid:g,hata:hata,uyari:uyari,dolu:hepsi.length};
+}
+
+function onizle(){
+  const r=kartKur([k0.value,k1.value,k2.value]);
+  const onizlemeBaslik = UI_DIL==='en' ? 'Preview:' : 'Önizleme:';
+  onizleme.innerHTML = r.dolu ? '<div class="ipucu" style="margin-bottom:5px">'+onizlemeBaslik+'</div>'+gridHTML(r.grid,false) : '';
+  formHata.innerHTML = r.hata.length ? '<div class="hata">⚠ '+r.hata.join('<br>⚠ ')+'</div>' : '';
+  if(r.uyari.length) formHata.innerHTML += '<div class="uyari">'+r.uyari.join('<br>')+'</div>';
+  return r;
+}
+
+function kartKaydet(){
+  const r=onizle();
+  if(r.dolu===0){ toast(t('onceSayilariYaz'),'kotu'); return; }
+  if(r.hata.length){ toast(t('onceHatalariDuzelt'),'kotu'); return; }
+  const ad=(kAd.value||'').trim() || t('kartAdVarsayilan',{n:S.sayac});
+  S.cards.push({id:'c'+Date.now()+Math.floor(Math.random()*99), ad:ad, grid:r.grid});
+  S.sayac++; kaydet(); formTemizle(); kartListeCiz();
+  toast(t('kartKaydedildi',{ad:ad}),'iyi');
+}
+
+function formTemizle(){ kAd.value=''; k0.value=''; k1.value=''; k2.value=''; onizleme.innerHTML=''; formHata.innerHTML=''; }
+
+function kartSil(id){
+  const k=S.cards.filter(function(c){return c.id===id;})[0]; if(!k) return;
+  if(!confirm(t('kartSilOnay',{ad:k.ad}))) return;
+  S.cards=S.cards.filter(function(c){return c.id!==id;});
+  anonsGuncelle(false); kaydet(); kartListeCiz(); ciz();
+}
+
+function kartDuzenle(id){
+  const k=S.cards.filter(function(c){return c.id===id;})[0]; if(!k) return;
+  kAd.value=k.ad;
+  for(let i=0;i<3;i++){ const v=k.grid[i].filter(function(x){return x!==null;}).join(' ');
+    document.getElementById('k'+i).value=v; }
+  S.cards=S.cards.filter(function(c){return c.id!==id;});
+  anonsGuncelle(false); kaydet(); kartListeCiz(); onizle(); git('kartlar');
+  toast(t('kartFormaAlindi'),'');
+}
+
+function hepsiniSil(){
+  if(!S.cards.length){ toast(t('zatenKartYok'),''); return; }
+  if(!confirm(t('tumKartlarSilOnay'))) return;
+  S.cards=[]; S.anons={}; S.sayac=1; kaydet(); kartListeCiz(); ciz(); toast(t('tumKartlarSilindi'),'');
+}
+
+/* rastgele geçerli 90'lık kart (test için) */
+function rastgeleKart(){
+  for(let deneme=0;deneme<800;deneme++){
+    const say=new Array(9).fill(1); let kalan=6;
+    while(kalan>0){ const i=Math.floor(Math.random()*9); if(say[i]<3){ say[i]++; kalan--; } }
+    const kap=[5,5,5];
+    const g=[Array(9).fill(null),Array(9).fill(null),Array(9).fill(null)];
+    const sira=[0,1,2,3,4,5,6,7,8].sort(function(){return Math.random()-0.5;})
+                                  .sort(function(a,b){return say[b]-say[a];});
+    let ok=true;
+    for(const c of sira){
+      const satirlar=[0,1,2].filter(function(r){return kap[r]>0;})
+                            .sort(function(a,b){return kap[b]-kap[a] || (Math.random()-0.5);});
+      if(satirlar.length<say[c]){ ok=false; break; }
+      satirlar.slice(0,say[c]).forEach(function(r){ kap[r]--; g[r][c]=0; });
+    }
+    if(!ok || kap[0]||kap[1]||kap[2]) continue;
+    for(let c=0;c<9;c++){
+      const lo=c===0?1:c*10, hi=c===8?90:c*10+9;
+      const havuz=[]; for(let n=lo;n<=hi;n++) havuz.push(n);
+      havuz.sort(function(){return Math.random()-0.5;});
+      const rs=[0,1,2].filter(function(r){return g[r][c]!==null;});
+      const sec=havuz.slice(0,rs.length).sort(function(a,b){return a-b;});
+      rs.forEach(function(r,i){ g[r][c]=sec[i]; });
+    }
+    return g;
+  }
+  return null;
+}
+function ornekKart(){
+  const g=rastgeleKart(); if(!g){ toast(t('ornekOlusturulamadi'),'kotu'); return; }
+  for(let i=0;i<3;i++) document.getElementById('k'+i).value=g[i].filter(function(x){return x!==null;}).join(' ');
+  onizle(); toast(t('ornekFormaYazildi'),'');
+}
+
+/* ================== ÇİZİM ================== */
+function gridHTML(g,canli){
+  let h='<div class="grid">';
+  for(let i=0;i<3;i++) for(let c=0;c<9;c++){
+    const n=g[i][c];
+    if(n===null){ h+='<div class="h bos"></div>'; }
+    else{
+      const im = canli && isaretli(n);
+      const yeni = im && n===sonEklenen ? ' yeni' : '';
+      h+='<div class="h'+(im?' isaretli':'')+yeni+'">'+n+'</div>';
+    }
+  }
+  return h+'</div>';
+}
+
+/* Kart, fotoğraftan tarandıysa (k.foto var) fotoğrafın üzerine tam konumunda işaret koyar;
+   elle girildiyse eski dijital ızgarayı çizer. */
+function kartGorsel(k, canli){
+  if(k.foto){
+    let isaretler='';
+    if(canli){
+      for(let i=0;i<3;i++) for(let c=0;c<9;c++){
+        const n=k.grid[i][c];
+        if(n!==null && isaretli(n)){
+          const yeni = n===sonEklenen ? ' yeni' : '';
+          isaretler+='<div class="mark'+yeni+'" style="left:'+((c+0.5)/9*100).toFixed(2)+'%;top:'+((i+0.5)/3*100).toFixed(2)+'%"></div>';
+        }
+      }
+    }
+    return '<div class="fotokart"><img src="'+k.foto+'" alt="" draggable="false">'+isaretler+'</div>';
+  }
+  return gridHTML(k.grid,canli);
+}
+
+function tamSatirlar(k){ let s=0; for(let i=0;i<3;i++){
+  const ns=k.grid[i].filter(function(x){return x!==null;});
+  if(ns.length && ns.every(isaretli)) s++; } return s; }
+function tamKart(k){ return tamSatirlar(k)===3; }
+
+function kartListeCiz(){
+  kartSayisi.textContent=S.cards.length;
+  if(!S.cards.length){ kartListe.innerHTML='<div class="bos-mesaj">'+t('henuzKartYok')+'</div>'; return; }
+  kartListe.innerHTML='<div class="kartlar">'+S.cards.map(function(k){
+    return '<div class="kartkutu"><div class="kbas"><span class="kad">'+kacir(k.ad)+'</span>'+
+      '<span class="satir"><button class="btn ikincil kucuk" onclick="kartDuzenle(\''+k.id+'\')">'+t('duzenleBtn')+'</button>'+
+      '<button class="btn sil kucuk" onclick="kartSil(\''+k.id+'\')">'+t('silBtn')+'</button></span></div>'+
+      kartGorsel(k,false)+'</div>';
+  }).join('')+'</div>';
+}
+
+function ciz(){
+  cagriSayisi.textContent = S.called.length ? t('sayiCagrildi',{n:S.called.length}) : '';
+  gecmis.innerHTML = S.called.length
+    ? S.called.slice().reverse().slice(0,24).map(function(n,i){ return '<span class="rozet'+(i===0?' son':'')+'">'+n+'</span>'; }).join('')
+    : '<span class="ipucu">'+t('henuzSayiGirilmedi')+'</span>';
+  if(!S.cards.length){ oyunKartlar.innerHTML='<div class="kutu"><div class="bos-mesaj">'+t('onceKartEkle')+'</div></div>'; return; }
+  oyunKartlar.innerHTML = S.cards.map(function(k){
+    const sy=tamSatirlar(k), full=sy===3;
+    return '<div class="kartkutu'+(full?' tamam':'')+'"><div class="kbas"><span class="kad">'+kacir(k.ad)+'</span>'+
+      (full?'<span class="bingo">'+t('bingoRozet')+'</span>':'<span class="durum">'+t('satirDurum',{n:sy})+'</span>')+'</div>'+
+      kartGorsel(k,true)+'</div>';
+  }).join('');
+}
+function kacir(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+/* ================== SAYI GİRİŞİ ================== */
+let tampon='';
+function tus(d){ if(tampon.length>=2) return; if(tampon===''&&d==='0') return; tampon+=d; ekranCiz(); }
+function sil(){ tampon=tampon.slice(0,-1); ekranCiz(); }
+function ekranCiz(){ ekran.textContent = tampon||'--'; ekran.className = tampon?'':'bos'; }
+
+function onayla(){
+  const n=parseInt(tampon,10);
+  if(!n || n<1 || n>90){ toast(t('sayiAraligiUyari'),'kotu'); tampon=''; ekranCiz(); return; }
+  if(isaretli(n)){ toast(t('zatenGirilmisti',{n:n}),'kotu'); titre([60,60,60]); tampon=''; ekranCiz(); return; }
+  S.called.push(n); sonEklenen=n; tampon=''; ekranCiz();
+  const yeniler=anonsGuncelle(true);
+  kaydet(); ciz();
+  if(!yeniler.length){
+    const varMi=S.cards.some(function(k){ return k.grid.some(function(r){ return r.indexOf(n)>-1; }); });
+    if(varMi){ toast(t('isaretlendi',{n:n}),'iyi'); titre([45]); bip(880,.08); }
+    else{ toast(t('hicKartindaYok',{n:n}),''); }
+  }
+}
+
+function geriAl(){
+  if(!S.called.length){ toast(t('geriAlinacakYok'),''); return; }
+  const n=S.called.pop(); sonEklenen=null;
+  anonsGuncelle(false); kaydet(); ciz();
+  toast(t('geriAlindi',{n:n}),'');
+}
+function oyunSifirla(){
+  if(!S.called.length){ toast(t('zatenTemiz'),''); return; }
+  if(!confirm(t('oyunSifirlaOnay'))) return;
+  S.called=[]; S.anons={}; sonEklenen=null; kaydet(); ciz(); toast(t('oyunSifirlandi'),'');
+}
+
+/* çizgi / bingo tespiti */
+function anonsGuncelle(duyur){
+  const onceki=S.anons||{}, simdi={}, yeni=[];
+  S.cards.forEach(function(k){
+    for(let i=0;i<3;i++){
+      const ns=k.grid[i].filter(function(x){return x!==null;});
+      if(ns.length && ns.every(isaretli)){
+        const key='r_'+k.id+'_'+i; simdi[key]=1;
+        if(!onceki[key]) yeni.push({tip:'satir',ad:k.ad,i:i});
+      }
+    }
+    if(tamKart(k)){ const key='f_'+k.id; simdi[key]=1;
+      if(!onceki[key]) yeni.push({tip:'full',ad:k.ad}); }
+  });
+  S.anons=simdi;
+  if(duyur && yeni.length){
+    const full=yeni.filter(function(y){return y.tip==='full';});
+    yeni.forEach(function(y){
+      if(y.tip==='satir') toast(t('satirTamam',{ad:y.ad,n:y.i+1}),'iyi');
+      else toast(t('kartTamamBingo',{ad:y.ad}),'iyi');
+    });
+    if(full.length){ titre([120,70,120,70,350]); bip(660,.15); setTimeout(function(){bip(880,.15);},170); setTimeout(function(){bip(1175,.3);},340); }
+    else { titre([90,60,90]); bip(784,.12); setTimeout(function(){bip(1046,.18);},140); }
+  }
+  return yeni;
+}
+
+/* ================== SES / TİTREŞİM / TOAST ================== */
+let ac=null;
+function bip(hz,sure){
+  if(!S.set.ses) return;
+  try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.type='sine'; o.frequency.value=hz; o.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(.0001,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.3,ac.currentTime+.01);
+    g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+sure);
+    o.start(); o.stop(ac.currentTime+sure+.02);
+  }catch(e){}
+}
+function titre(p){ if(S.set.tit && navigator.vibrate) try{ navigator.vibrate(p); }catch(e){} }
+function toast(msg,tip){
+  const d=document.createElement('div'); d.className='tmsg '+(tip||''); d.textContent=msg;
+  toastEl().appendChild(d);
+  setTimeout(function(){ d.style.transition='opacity .35s'; d.style.opacity='0';
+    setTimeout(function(){ d.remove(); },380); }, tip==='iyi'?3200:2400);
+}
+function toastEl(){ return document.getElementById('toast'); }
+
+/* ================== AYARLAR ================== */
+function ayarDegis(){
+  S.set.ses=aSes.checked; S.set.tit=aTit.checked; S.set.buyuk=aBuyuk.checked;
+  document.body.classList.toggle('buyuk',S.set.buyuk); kaydet();
+}
+function ayarYaz(){
+  aSes.checked=S.set.ses; aTit.checked=S.set.tit; aBuyuk.checked=S.set.buyuk;
+  document.body.classList.toggle('buyuk',S.set.buyuk);
+}
+
+/* ================== FOTOĞRAF İLE KART OKUMA (AI — DeepSeek) ================== */
+/* Gizlilik: fotoğraf hiçbir aracı sunucuya uğramadan, doğrudan bu tarayıcıdan kullanıcının
+   kendi DeepSeek anahtarıyla DeepSeek'e gönderilir; uygulamanın kendi sunucusu yok, bir yere
+   kaydedilmez. AI hiçbir kartı kendi başına kaydetmez — okunan her kart, insan onaylayıp
+   "Kartı kaydet" e basana kadar sadece önizlemededir (çekirdek ilke: AI hazırlar, insan onaylar). */
+let taramaKuyruk=[], taramaIdx=0, taramaGridState=null, taramaFotoAktif=null;
+
+function fotoBaslat(){
+  if(!dsYukle()){ toast(t('onceAnahtarGir'),'kotu'); git('ayar'); return; }
+  fotoGirdi.click();
+}
+
+async function fotoSecildi(evt){
+  const dosya = evt.target.files && evt.target.files[0];
+  evt.target.value='';
+  if(!dosya) return;
+  const anahtar = dsYukle();
+  if(!anahtar){ toast(t('onceAnahtarGir'),'kotu'); git('ayar'); return; }
+  fotoBtn.disabled=true; fotoBtn.textContent=t('fotoHazirlaniyor');
+  try{
+    const dataUrl = await gorselSikistir(dosya, 1500);
+    fotoBtn.textContent=t('deepseekOkuyor');
+    const json = await deepseekKartOku(dataUrl, anahtar);
+    await kuyrukKur(json, dataUrl);
+  }catch(e){
+    taramaHataGoster(e);
+  }finally{
+    fotoBtn.disabled=false; fotoBtn.textContent=t('fotoButon');
+  }
+}
+
+function gorselSikistir(dosya, maxBoyut){
+  return new Promise(function(resolve,reject){
+    const url=URL.createObjectURL(dosya);
+    const img=new Image();
+    img.onload=function(){
+      let w=img.naturalWidth, h=img.naturalHeight;
+      if(w>maxBoyut||h>maxBoyut){ const oran=Math.min(maxBoyut/w,maxBoyut/h); w=Math.round(w*oran); h=Math.round(h*oran); }
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      resolve(cv.toDataURL('image/jpeg',0.85));
+    };
+    img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error('GÖRSEL_OKUNAMADI')); };
+    img.src=url;
+  });
+}
+
+const DS_SISTEM_PROMPT =
+'You are reading a photo of one or more British 90-ball bingo tickets.\n'+
+'Rules of a 90-ball bingo ticket:\n'+
+'- Each ticket has exactly 3 rows and 9 columns.\n'+
+'- Each row has exactly 5 printed numbers and 4 blank cells.\n'+
+'- Column 1 holds numbers 1-9, column 2 holds 10-19, column 3 holds 20-29, ... column 8 holds 80-89, column 9 holds 80-90.\n'+
+'- Within a column, numbers read top to bottom in ascending order.\n'+
+'There may be several separate tickets in the photo (e.g. a strip of tickets). Read every ticket you can clearly identify.\n'+
+'For every cell output the printed number, or null if the cell is blank.\n'+
+'Also estimate, for each ticket, a tight bounding box of just that ticket within the WHOLE photo, normalized 0-1 '+
+'(x,y = top-left corner as a fraction of the photo width/height; w,h = width/height as a fraction of the photo width/height).\n'+
+'Respond with ONLY valid JSON, no explanation, no markdown code fences, in exactly this shape:\n'+
+'{"cards":[{"box":{"x":0-1,"y":0-1,"w":0-1,"h":0-1},"rows":[[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9]]}]}\n'+
+'Each "rows" array must have exactly 3 rows, each row exactly 9 items (a number or null). If unsure of the exact box, give your best estimate.';
+
+async function deepseekKartOku(dataUrl, anahtar){
+  const govde={
+    model:'deepseek-flash',
+    temperature:0,
+    max_tokens:3000,
+    messages:[
+      {role:'system', content:DS_SISTEM_PROMPT},
+      {role:'user', content:[
+        {type:'text', text:'Read the bingo card(s) in this photo and return only the JSON described above.'},
+        {type:'image_url', image_url:{url:dataUrl}}
+      ]}
+    ]
+  };
+  let yanit;
+  try{
+    yanit = await fetch('https://api.deepseek.com/chat/completions', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+anahtar },
+      body: JSON.stringify(govde)
+    });
+  }catch(agHatasi){ throw new Error('AG_HATASI'); }
+  if(!yanit.ok){
+    let ayrinti='';
+    try{ const j=await yanit.json(); ayrinti=(j&&j.error&&j.error.message)||''; }catch(e){}
+    throw new Error('API_HATASI:'+yanit.status+(ayrinti?(' '+ayrinti):''));
+  }
+  const veri=await yanit.json();
+  const icerik = veri && veri.choices && veri.choices[0] && veri.choices[0].message && veri.choices[0].message.content;
+  if(!icerik) throw new Error('BOS_YANIT');
+  return jsonAyikla(icerik);
+}
+
+function jsonAyikla(metin){
+  let metinTemiz=(metin||'').trim();
+  metinTemiz=metinTemiz.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'');
+  const i=metinTemiz.indexOf('{'), j=metinTemiz.lastIndexOf('}');
+  if(i===-1||j===-1||j<i) throw new Error('JSON_YOK');
+  return JSON.parse(metinTemiz.slice(i,j+1));
+}
+
+function taramaHataGoster(e){
+  const m=String((e&&e.message)||e);
+  if(m==='AG_HATASI') toast(t('agHatasi'),'kotu');
+  else if(m.indexOf('API_HATASI:401')>-1) toast(t('anahtarGecersiz'),'kotu');
+  else if(m.indexOf('API_HATASI:429')>-1) toast(t('kotaDoldu'),'kotu');
+  else if(m.indexOf('API_HATASI')>-1) toast(t('istekBasarisiz',{detay:m.replace('API_HATASI:','')}),'kotu');
+  else if(m==='JSON_YOK'||e instanceof SyntaxError) toast(t('yanitAnlasilamadi'),'kotu');
+  else if(m==='GÖRSEL_OKUNAMADI') toast(t('gorselAcilamadi'),'kotu');
+  else toast(t('kartOkunamadi',{detay:m}),'kotu');
+}
+
+/* Fotoğrafın (dataUrl) içinden, normalize (0-1) bir kutuyu (kutu:{x,y,w,h}) kırpıp
+   kendi başına küçük bir kart fotoğrafı üretir. Kutu geçersiz/eksikse null döner —
+   o zaman kart, aşağıda eski dijital ızgara ile düzenlenir (yine tam çalışır, sadece
+   fotoğraf üzerinde değil). */
+function kutuKirp(dataUrl, kutu){
+  return new Promise(function(resolve){
+    const x=kutu&&Number(kutu.x), y=kutu&&Number(kutu.y), w=kutu&&Number(kutu.w), h=kutu&&Number(kutu.h);
+    if(!(w>0.03 && h>0.02 && x>=0 && y>=0 && x+w<=1.02 && y+h<=1.02)){ resolve(null); return; }
+    const img=new Image();
+    img.onload=function(){
+      try{
+        const sx=Math.max(0,Math.round(x*img.naturalWidth)), sy=Math.max(0,Math.round(y*img.naturalHeight));
+        const sw=Math.max(1,Math.round(w*img.naturalWidth)), sh=Math.max(1,Math.round(h*img.naturalHeight));
+        const cv=document.createElement('canvas'); cv.width=sw; cv.height=sh;
+        cv.getContext('2d').drawImage(img, sx,sy,sw,sh, 0,0,sw,sh);
+        resolve(cv.toDataURL('image/jpeg',0.85));
+      }catch(e){ resolve(null); }
+    };
+    img.onerror=function(){ resolve(null); };
+    img.src=dataUrl;
+  });
+}
+
+async function kuyrukKur(json, kaynakDataUrl){
+  const kartlar=(json && json.cards) || [];
+  const temiz=[];
+  for(const c of kartlar){
+    const satirlarHam=(c && c.rows) || [];
+    const g=[[],[],[]];
+    for(let i=0;i<3;i++){
+      const r=satirlarHam[i]||[];
+      g[i]=[0,1,2,3,4,5,6,7,8].map(function(ci){
+        const v=r[ci];
+        return (v===null||v===''||v===undefined||isNaN(v)) ? null : Math.round(Number(v));
+      });
+    }
+    const doluMu=g.some(function(row){ return row.some(function(v){ return v!==null; }); });
+    if(!doluMu) continue;
+    const foto = kaynakDataUrl ? await kutuKirp(kaynakDataUrl, c && c.box) : null;
+    temiz.push({grid:g, foto:foto});
+  }
+  if(!temiz.length){ toast(t('okunakliKartYok'),'kotu'); return; }
+  taramaKuyruk=temiz; taramaIdx=0;
+  toast(t('kartTarandi',{n:temiz.length}),'iyi');
+  kuyrukGoster();
+}
+
+function kuyrukGoster(){
+  if(taramaIdx>=taramaKuyruk.length){ taramaBitir(); return; }
+  const oge=taramaKuyruk[taramaIdx];
+  taramaGridState=oge.grid.map(function(row){ return row.slice(); });
+  taramaFotoAktif=oge.foto||null;
+  taramaAdInput.value=t('taramaAdVarsayilan',{n:taramaIdx+1});
+  taramaBanner.hidden=false;
+  taramaMetin.textContent = taramaFotoAktif
+    ? t('taramaMetinFoto',{i:taramaIdx+1,n:taramaKuyruk.length})
+    : t('taramaMetinGrid',{i:taramaIdx+1,n:taramaKuyruk.length});
+  taramaGridCiz();
+  taramaBanner.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+/* Taranan kartı, fotoğrafın kendisi (varsa) üzerine bindirilmiş 27 küçük düzenlenebilir
+   hücre olarak çizer — konumlar fotoğraftaki gerçek yerleriyle birebir aynı olsun diye
+   (satır i, sütun c) -> (%(c+0.5)/9, %(i+0.5)/3) formülüyle hesaplanır. Fotoğraf yoksa
+   eski düz dijital ızgaraya döner. */
+function taramaGridCiz(){
+  const g=taramaGridState;
+  let hucreler='';
+  for(let i=0;i<3;i++) for(let c=0;c<9;c++){
+    const v=g[i][c];
+    const uyari = v!==null && sutun(v)!==c;
+    const konum = taramaFotoAktif
+      ? ' style="left:'+((c+0.5)/9*100).toFixed(2)+'%;top:'+((i+0.5)/3*100).toFixed(2)+'%"'
+      : '';
+    hucreler += '<input class="h'+(uyari?' uyari':'')+'"'+konum+
+      ' inputmode="numeric" pattern="[0-9]*" maxlength="2" data-r="'+i+'" data-c="'+c+'" value="'+(v===null?'':v)+
+      '" onchange="taramaHucreDegisti(this)">';
+  }
+  taramaGrid.innerHTML = taramaFotoAktif
+    ? '<div class="fotokart-duzenle"><img src="'+taramaFotoAktif+'" alt="" draggable="false">'+hucreler+'</div>'
+    : '<div class="grid">'+hucreler+'</div>';
+  taramaUyarilarGuncelle();
+}
+
+function taramaHucreDegisti(el){
+  const r=+el.dataset.r, c=+el.dataset.c;
+  const ham=el.value.replace(/[^0-9]/g,'').slice(0,2);
+  const n=ham===''?null:parseInt(ham,10);
+  taramaGridState[r][c] = (n===0) ? null : n;
+  taramaGridCiz();
+}
+
+/* Sert hata: 1-90 dışı ya da kart içinde tekrar eden sayı (bunlar mutlaka yanlıştır).
+   Yumuşak uyarı: standart sütun aralığıyla uyuşmuyor (fotoğraftan farklı bir kart formatı
+   olabilir ya da yanlış okunmuş olabilir) — engellemez, sadece sarıyla vurgular. */
+function taramaDogrula(){
+  const g=taramaGridState, hata=[], uyari=[], gorulen=[];
+  for(let i=0;i<3;i++) for(let c=0;c<9;c++){
+    const v=g[i][c]; if(v===null) continue;
+    if(v<1||v>90){ hata.push(t('degerGecersiz',{i:i+1,v:v})); continue; }
+    if(gorulen.indexOf(v)>-1){ hata.push(t('ikiKezGeciyor',{v:v})); continue; }
+    gorulen.push(v);
+    if(sutun(v)!==c){
+      const beklenen = c===0?'1-9':(c===8?'80-90':(c*10)+'-'+(c*10+9));
+      uyari.push(t('sutunUyari',{i:i+1,c:c+1,v:v,aralik:beklenen}));
+    }
+  }
+  return {hata:hata, uyari:uyari, dolu:gorulen.length};
+}
+
+function taramaUyarilarGuncelle(){
+  const r=taramaDogrula();
+  let h='';
+  if(r.hata.length) h+='<div class="hata">⚠ '+r.hata.join('<br>⚠ ')+'</div>';
+  if(r.uyari.length) h+='<div class="uyari">'+r.uyari.join('<br>')+'</div>';
+  taramaUyarilar.innerHTML=h;
+}
+
+function taramaKaydet(){
+  const r=taramaDogrula();
+  if(r.dolu===0){ toast(t('kartHicSayiYok'),'kotu'); return; }
+  if(r.hata.length){ toast(t('onceHatayiDuzelt',{hata:r.hata[0]}),'kotu'); return; }
+  const ad=(taramaAdInput.value||'').trim() || t('taramaAdVarsayilan',{n:taramaIdx+1});
+  const gridKopya=taramaGridState.map(function(row){ return row.slice(); });
+  S.cards.push({id:'c'+Date.now()+Math.floor(Math.random()*99), ad:ad, grid:gridKopya, foto:taramaFotoAktif});
+  S.sayac++; kaydet(); kartListeCiz();
+  toast(t('kartKaydedildi',{ad:ad}),'iyi');
+  taramaIdx++;
+  if(taramaIdx<taramaKuyruk.length){ kuyrukGoster(); } else { taramaBitir(); }
+}
+
+function taramaAtla(){
+  taramaIdx++;
+  if(taramaIdx<taramaKuyruk.length){ kuyrukGoster(); } else { taramaBitir(); }
+}
+function taramaIptal(){
+  taramaKuyruk=[]; taramaIdx=0; taramaFotoAktif=null; taramaBanner.hidden=true;
+  toast(t('taramaIptalEdildi'),'');
+}
+function taramaBitir(){
+  taramaBanner.hidden=true; taramaKuyruk=[]; taramaIdx=0; taramaFotoAktif=null;
+  toast(t('taramaTamamlandi'),'');
+}
+
+/* ================== DEEPSEEK ANAHTARI (yalnızca cihazda saklanır) ================== */
+/* Yasal/gizlilik notu: anahtar hiçbir sunucuya gönderilmez, sadece bu tarayıcının
+   localStorage'ında tutulur. v1'de fiilen kullanılmıyor; v2 (kart okuma) ve v3 (sesli
+   sayı yorumlama) burada saklı anahtarı otomatik kullanacak. */
+function dsYukle(){ try{ return localStorage.getItem(LS_DS)||''; }catch(e){ return ''; } }
+function dsKaydet(){
+  try{ localStorage.setItem(LS_DS, dsAnahtar.value.trim()); }catch(e){}
+  dsDurumCiz();
+}
+function dsSil(){
+  dsAnahtar.value=''; try{ localStorage.removeItem(LS_DS); }catch(e){}
+  dsDurumCiz(); toast(t('dsAnahtarSilindi'),'');
+}
+function dsDurumCiz(){
+  const var_=!!dsAnahtar.value.trim();
+  dsNokta.className='durum-nokta'+(var_?' acik':'');
+  dsDurum.textContent = var_ ? t('dsVarMetin') : t('dsYokMetin');
+}
+function dsAyarYaz(){ dsAnahtar.value=dsYukle(); dsDurumCiz(); }
+
+/* ================== SESLİ SAYI ALGILAMA (v3) ================== */
+/* Gizlilik: mikrofon sadece "Oyun" ekranındayken ve kullanıcı açıkça başlatınca dinler;
+   başka ekrana geçince otomatik kapanır. Ham ses, tarayıcının kendi konuşma tanıma
+   servisiyle metne çevrilir (bu uygulamanın sunucusuna hiç uğramaz) — sadece çıkan METİN
+   burada bir sayıya çözümlenir. ÇEKİRDEK İLKE: AI/otomatik algılama hiçbir sayıyı kendi
+   başına işaretlemez — önce kullanıcıya "bu sayı mı?" diye sorar, "Evet" deyince işaretler. */
+let tanima=null, micAcik=false, micOnayNumara=null, micOnayZamanlayici=null;
+
+const TR_SAYI={'sıfır':0,'sifir':0,'bir':1,'iki':2,'üç':3,'uc':3,'dört':4,'dort':4,'beş':5,'bes':5,
+  'altı':6,'alti':6,'yedi':7,'sekiz':8,'dokuz':9,'on':10,'yirmi':20,'otuz':30,'kırk':40,'kirk':40,
+  'elli':50,'altmış':60,'altmis':60,'yetmiş':70,'yetmis':70,'seksen':80,'doksan':90};
+const EN_SAYI={'zero':0,'oh':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,'nine':9,
+  'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,'fifteen':15,'sixteen':16,'seventeen':17,'eighteen':18,'nineteen':19,
+  'twenty':20,'thirty':30,'forty':40,'fifty':50,'sixty':60,'seventy':70,'eighty':80,'ninety':90};
+/* geleneksel İngiliz bingo çağrı isimleri — birkaç yaygın örnek, istenirse genişletilir */
+const EN_CAGRI={"kelly's eye":1,'one little duck':2,'two little ducks':22,'unlucky for some':13,
+  'legs eleven':11,'man alive':45,'top of the shop':90,'top of the house':90};
+
+/* Duyulan metni 1-90 arası bir sayıya çözümler; çözemezse null döner (yok sayılır). */
+function sayiCoz(metinHam){
+  let metin=(metinHam||'').toLowerCase().trim().replace(/[.,!?]/g,'');
+  if(!metin) return null;
+  const rakam=metin.match(/\b(\d{1,2})\b/);
+  if(rakam){ const n=parseInt(rakam[1],10); if(n>=1&&n<=90) return n; }
+  for(const k in EN_CAGRI){ if(metin.indexOf(k)>-1) return EN_CAGRI[k]; }
+  const kelimeler=metin.split(/\s+/).filter(Boolean);
+  const degerler=kelimeler.map(function(k){ return (k in TR_SAYI)?TR_SAYI[k]:((k in EN_SAYI)?EN_SAYI[k]:null); })
+                          .filter(function(d){ return d!==null; });
+  if(!degerler.length) return null;
+  if(degerler.length===1){ const v=degerler[0]; return (v>=1&&v<=90)?v:null; }
+  const a=degerler[degerler.length-2], b=degerler[degerler.length-1];
+  if(a>=10 && a%10===0 && b>=1 && b<=9){ const v=a+b; return (v<=90)?v:null; } /* "kırk yedi" / "forty seven" */
+  if(a>=0 && a<=9 && b>=0 && b<=9){ const v=a*10+b; return (v>=1&&v<=90)?v:null; } /* "dört yedi" / "four seven" */
+  return null;
+}
+
+function micDestekVarMi(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
+
+function micToggle(){
+  if(!micDestekVarMi()){ toast(t('micDesteklenmiyor'),'kotu'); return; }
+  if(micAcik) micDurdur(); else micBaslat();
+}
+
+function micBaslat(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  tanima=new SR();
+  tanima.lang=S.set.dil||'tr-TR';
+  tanima.continuous=true;
+  tanima.interimResults=false;
+  tanima.onresult=function(e){
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) micParcaIsle(e.results[i][0].transcript);
+    }
+  };
+  tanima.onerror=function(e){
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){ toast(t('micIzinYok'),'kotu'); micDurdur(); }
+    /* diger hatalarda (ör. no-speech) sessizce devam — onend zaten yeniden baslatacak */
+  };
+  tanima.onend=function(){ if(micAcik){ try{ tanima.start(); }catch(err){} } }; /* surekli dinleme icin kendini yeniden baslatir */
+  try{ tanima.start(); micAcik=true; micUIGuncelle(); }
+  catch(e){ toast(t('micBaslatilamadi'),'kotu'); }
+}
+
+function micDurdur(){
+  micAcik=false;
+  if(tanima){ try{ tanima.onend=null; tanima.stop(); }catch(e){} }
+  micUIGuncelle(); micOnayGizle();
+}
+
+function micUIGuncelle(){
+  micBtn.textContent = micAcik ? t('micDurdurBtn') : t('micBaslatBtn');
+  micBtn.className = micAcik ? 'btn sil' : 'btn ikincil';
+  micDurum.innerHTML = micAcik ? '<span class="durum-nokta acik"></span> '+t('micDinleniyor') : '';
+}
+
+function micParcaIsle(metinHam){
+  const n=sayiCoz(metinHam);
+  micGecmis.textContent = n!==null ? t('micDuyuldu',{metin:metinHam,n:n}) : t('micAnlasilamadi',{metin:metinHam});
+  if(n===null) return;
+  if(isaretli(n)){ toast(t('micZatenIsaretli',{n:n}),''); return; }
+  micOnaySor(n);
+}
+
+function micOnaySor(n){
+  if(micOnayZamanlayici) clearTimeout(micOnayZamanlayici);
+  micOnayNumara=n;
+  micOnayMetin.textContent=t('micOnaySoru',{n:n});
+  micOnay.hidden=false;
+  titre([40]);
+  micOnayZamanlayici=setTimeout(function(){ micOnayGizle(); }, 6000); /* cevap gelmezse kendiliginden kapanir, ISARETLEMEZ */
+}
+function micOnayEvet(){
+  if(micOnayNumara===null) return;
+  const n=micOnayNumara; micOnayGizle();
+  tampon=String(n); ekranCiz(); onayla(); /* mevcut isaretleme/tekrar-kontrol/anons mantigini aynen kullanir */
+}
+function micOnayHayir(){ micOnayGizle(); }
+function micOnayGizle(){
+  micOnay.hidden=true; micOnayNumara=null;
+  if(micOnayZamanlayici){ clearTimeout(micOnayZamanlayici); micOnayZamanlayici=null; }
+}
+
+function dilSec(kod){
+  S.set.dil=kod; kaydet(); dilUIGuncelle();
+  if(micAcik){ micDurdur(); micBaslat(); }
+}
+function dilUIGuncelle(){
+  dilTR.className = (S.set.dil==='tr-TR') ? 'btn kucuk' : 'btn ikincil kucuk';
+  dilEN.className = (S.set.dil==='en-GB') ? 'btn kucuk' : 'btn ikincil kucuk';
+}
+
+/* klavye (masaüstünde test için) */
+document.addEventListener('keydown',function(e){
+  if(sOyun.hidden) return;
+  if(e.key>='0'&&e.key<='9'){ tus(e.key); e.preventDefault(); }
+  else if(e.key==='Backspace'){ sil(); e.preventDefault(); }
+  else if(e.key==='Enter'){ onayla(); e.preventDefault(); }
+});
+
+/* ================== BAŞLAT ================== */
+yukle(); ceviriUygula(); ayarYaz(); dsAyarYaz(); dilUIGuncelle(); anonsGuncelle(false); kartListeCiz(); ciz(); ekranCiz();
+if(!micDestekVarMi()){ micBtn.disabled=true; micBtn.textContent=t('micBuTarayiciYok'); micDestekYok.hidden=false; }
+if(S.cards.length) git('oyun');
+</script>
+</body>
+</html>
