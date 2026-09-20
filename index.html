@@ -122,6 +122,16 @@ body.buyuk .fotokart .mark{width:40px;height:40px;border-width:4px}
 <main>
 <!-- ================= KARTLAR ================= -->
 <section id="sKartlar">
+  <div class="kutu" style="background:var(--yesil-cok-ac);border-color:var(--yesil-ac)">
+    <div class="satir" style="justify-content:space-between;align-items:center;gap:12px">
+      <div>
+        <div style="font-weight:700" data-t="yeniTurBaslik">🔄 Yeni tur</div>
+        <div class="ipucu" data-t="yeniTurAciklama">Yeni bir oyun için tüm kartları ve çağrılan sayıları temizler</div>
+      </div>
+      <button class="btn" data-t="yeniTurBtn" onclick="yeniTur()" style="flex:none">Yeni Tur</button>
+    </div>
+  </div>
+
   <div class="kutu">
     <h2 data-t="fotoBaslikH2">📷 Fotoğraf ile kart oku (AI — DeepSeek)</h2>
     <p class="ipucu" data-t="fotoAciklama">Kart(lar)ın net, düz açılı, iyi ışıklı bir fotoğrafını çek. DeepSeek sayıları
@@ -188,6 +198,16 @@ body.buyuk .fotokart .mark{width:40px;height:40px;border-width:4px}
 
 <!-- ================= OYUN ================= -->
 <section id="sOyun" hidden>
+  <div class="kutu" style="background:var(--yesil-cok-ac);border-color:var(--yesil-ac)">
+    <div class="satir" style="justify-content:space-between;align-items:center;gap:12px">
+      <div>
+        <div style="font-weight:700" data-t="yeniTurBaslik">🔄 Yeni tur</div>
+        <div class="ipucu" data-t="yeniTurAciklama">Yeni bir oyun için tüm kartları ve çağrılan sayıları temizler</div>
+      </div>
+      <button class="btn" data-t="yeniTurBtn" onclick="yeniTur()" style="flex:none">Yeni Tur</button>
+    </div>
+  </div>
+
   <div class="kutu">
     <h2 data-t="oyunGirH2">Çağrılan sayıyı gir</h2>
     <div id="ekran" class="bos">--</div>
@@ -283,6 +303,9 @@ let sonEklenen=null;
 const T={
  tr:{
   appTitle:'Bingo Kart Takip', navKartlar:'Kartlarım', navOyun:'Oyun', navAyar:'Ayarlar',
+  yeniTurBaslik:'🔄 Yeni tur', yeniTurAciklama:'Yeni bir oyun için tüm kartları ve çağrılan sayıları temizler',
+  yeniTurBtn:'Yeni Tur', yeniTurOnay:'Yeni tur başlasın mı? Çağrılan sayılar VE tüm kartlar silinecek — bu geri alınamaz.',
+  yeniTurBasladi:'Yeni tur başladı — şimdi yeni kart(lar)ı ekle.',
   fotoBaslikH2:'📷 Fotoğraf ile kart oku (AI — DeepSeek)',
   fotoAciklama:'Kart(lar)ın net, düz açılı, iyi ışıklı bir fotoğrafını çek. DeepSeek sayıları okur; hiçbir şey senin onayın olmadan kaydedilmez — okunanları aşağıda tek tek kontrol edip "Kartı kaydet" e basarsın, yanlış varsa elle düzeltirsin.',
   fotoButon:'📷 Fotoğraf ile kart oku (AI)',
@@ -357,6 +380,9 @@ const T={
  },
  en:{
   appTitle:'Bingo Card Tracker', navKartlar:'My Cards', navOyun:'Play', navAyar:'Settings',
+  yeniTurBaslik:'🔄 New round', yeniTurAciklama:'Clears all cards and called numbers to start a fresh game',
+  yeniTurBtn:'New Round', yeniTurOnay:'Start a new round? Called numbers AND all cards will be deleted — this cannot be undone.',
+  yeniTurBasladi:'New round started — now add your new card(s).',
   fotoBaslikH2:'📷 Scan card from photo (AI — DeepSeek)',
   fotoAciklama:'Take a clear, straight-on, well-lit photo of your card(s). DeepSeek reads the numbers; nothing is saved without your approval — check each scanned card below and press "Save card", correct it by hand if anything is wrong.',
   fotoButon:'📷 Scan card from photo (AI)',
@@ -448,11 +474,12 @@ function uiDilBtnGuncelle(){
   uiDilEN.className = (UI_DIL==='en') ? 'aktifdil' : '';
 }
 function uiDilSec(kod){
+  /* Arayüz dili ve mikrofon dinleme dili KASITLI olarak birbirinden bağımsızdır — biri Türkçe
+     arayüzü anlıyor ama sayılar İngilizce söyleniyor olabilir (ya da tam tersi). Bu yüzden
+     burada mikrofon diline hiç dokunulmaz; o sadece Ayarlar'daki kendi anahtarıyla değişir. */
   UI_DIL=kod; S.set.uiDil=kod;
-  S.set.dil = (kod==='en') ? 'en-GB' : 'tr-TR'; /* mikrofon dinleme dilini de arayüz diliyle eşitle */
-  kaydet(); ceviriUygula(); dsDurumCiz(); dilUIGuncelle();
+  kaydet(); ceviriUygula(); dsDurumCiz();
   kartListeCiz(); if(!sOyun.hidden) ciz();
-  if(micAcik){ micDurdur(); micBaslat(); } /* dinliyorsa yeni dille yeniden başlat */
 }
 
 function yukle(){ try{ const r=localStorage.getItem(LS); if(r){ const o=JSON.parse(r);
@@ -546,6 +573,18 @@ function hepsiniSil(){
   if(!S.cards.length){ toast(t('zatenKartYok'),''); return; }
   if(!confirm(t('tumKartlarSilOnay'))) return;
   S.cards=[]; S.anons={}; S.sayac=1; S.photos={}; kaydet(); kartListeCiz(); ciz(); toast(t('tumKartlarSilindi'),'');
+}
+
+/* Tek düğmeyle yeni tura geçiş: önceki turun kartlarını VE çağrılan sayılarını birlikte
+   temizler — turlar arasında eski/yeni kartların ekranda karışmaması için. */
+function yeniTur(){
+  if(!confirm(t('yeniTurOnay'))) return;
+  S.called=[]; S.anons={}; sonEklenen=null;
+  S.cards=[]; S.photos={}; S.sayac=1;
+  taramaKuyruk=[]; taramaIdx=0; taramaKutuAktif=null; taramaKaynakFoto=null; taramaFotoId=null;
+  if(taramaBanner) taramaBanner.hidden=true;
+  kaydet(); kartListeCiz(); ciz();
+  toast(t('yeniTurBasladi'),'iyi');
 }
 
 /* rastgele geçerli 90'lık kart (test için) */
@@ -1085,7 +1124,9 @@ const EN_CAGRI={"kelly's eye":1,'one little duck':2,'two little ducks':22,'unluc
 
 /* Duyulan metni 1-90 arası bir sayıya çözümler; çözemezse null döner (yok sayılır). */
 function sayiCoz(metinHam){
-  let metin=(metinHam||'').toLowerCase().trim().replace(/[.,!?]/g,'');
+  /* İngilizce konuşma tanıma "forty-seven" gibi bileşik sayıları tire ile TEK kelime olarak
+     döndürebilir — tireyi boşluğa çevirip iki ayrı kelime gibi işliyoruz. */
+  let metin=(metinHam||'').toLowerCase().trim().replace(/[.,!?]/g,'').replace(/[-–—]/g,' ').replace(/\s+/g,' ').trim();
   if(!metin) return null;
   const rakam=metin.match(/\b(\d{1,2})\b/);
   if(rakam){ const n=parseInt(rakam[1],10); if(n>=1&&n<=90) return n; }
