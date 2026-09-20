@@ -242,6 +242,7 @@ body.buyuk .fotokart .mark{width:40px;height:40px;border-width:4px}
         <button class="btn ikincil kucuk" data-t="micHayirBtn" onclick="micOnayHayir()">✖ Hayır</button>
       </div>
     </div>
+    <div id="micCanli" class="ipucu" style="font-style:italic;min-height:17px"></div>
     <div id="micGecmis" class="ipucu"></div>
   </div>
 
@@ -262,6 +263,8 @@ body.buyuk .fotokart .mark{width:40px;height:40px;border-width:4px}
       <span class="satir">
         <button class="btn kucuk" id="dilTR" data-t="dilTRBtn" onclick="dilSec('tr-TR')">Türkçe</button>
         <button class="btn ikincil kucuk" id="dilEN" data-t="dilENBtn" onclick="dilSec('en-GB')">İngilizce</button>
+        <button class="btn ikincil kucuk" id="dilIE" data-t="dilIEBtn" onclick="dilSec('en-IE')">İngilizce (İrlanda)</button>
+        <button class="btn ikincil kucuk" id="dilUS" data-t="dilUSBtn" onclick="dilSec('en-US')">İngilizce (ABD)</button>
       </span>
     </div>
   </div>
@@ -333,7 +336,7 @@ const T={
   titBaslik:'📳 Titreşim', titAciklama:'Telefonlarda çalışır',
   buyukBaslik:'🔎 Büyük görünüm', buyukAciklama:'Kutucuklar ve yazılar büyür',
   sesliDilBaslik:'🎤 Sesli tanıma dili', sesliDilAciklama:'Çağrıcı hangi dilde söylüyorsa onu seç',
-  dilTRBtn:'Türkçe', dilENBtn:'İngilizce',
+  dilTRBtn:'Türkçe', dilENBtn:'İngilizce', dilIEBtn:'İngilizce (İrlanda)', dilUSBtn:'İngilizce (ABD)',
   aiH2:'🤖 AI Ajanı (DeepSeek)',
   dsVarMetin:'Anahtar kayıtlı — fotoğraf ile kart okuma açık.', dsYokMetin:'Anahtar girilmedi — AI özellikleri kapalı.',
   dsLabel:'DeepSeek API Anahtarı',
@@ -410,7 +413,7 @@ const T={
   titBaslik:'📳 Vibration', titAciklama:'Works on phones',
   buyukBaslik:'🔎 Large view', buyukAciklama:'Bigger cells and text',
   sesliDilBaslik:'🎤 Voice recognition language', sesliDilAciklama:'Pick the language the caller speaks',
-  dilTRBtn:'Turkish', dilENBtn:'English',
+  dilTRBtn:'Turkish', dilENBtn:'English', dilIEBtn:'English (Ireland)', dilUSBtn:'English (US)',
   aiH2:'🤖 AI Agent (DeepSeek)',
   dsVarMetin:'Key saved — photo card scanning is on.', dsYokMetin:'No key entered — AI features are off.',
   dsLabel:'DeepSeek API Key',
@@ -705,11 +708,20 @@ function onayla(){
   S.called.push(n); sonEklenen=n; tampon=''; ekranCiz();
   const yeniler=anonsGuncelle(true);
   kaydet(); ciz();
+  const varMi=S.cards.some(function(k){ return k.grid.some(function(r){ return r.indexOf(n)>-1; }); });
+  if(varMi) isaretiGoster(); /* kağıt üzerinde hızlı işaretleyebilsin diye ekranı doğrudan işaretin yerine kaydır */
   if(!yeniler.length){
-    const varMi=S.cards.some(function(k){ return k.grid.some(function(r){ return r.indexOf(n)>-1; }); });
     if(varMi){ toast(t('isaretlendi',{n:n}),'iyi'); titre([45]); bip(880,.08); }
     else{ toast(t('hicKartindaYok',{n:n}),''); }
   }
+}
+
+/* Az önce işaretlenen hücreyi (fotoğraf üzerindeki halka ya da dijital ızgaradaki kutu)
+   ekranın ortasına kaydırır — kullanıcı sayfayı elle aramadan hemen fiziksel kağıdına
+   bakıp işaretleyebilsin diye. */
+function isaretiGoster(){
+  const el=document.querySelector('#oyunKartlar .mark.yeni, #oyunKartlar .h.yeni');
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
 function geriAl(){
@@ -1117,7 +1129,9 @@ const TR_SAYI={'sıfır':0,'sifir':0,'bir':1,'iki':2,'üç':3,'uc':3,'dört':4,'
   'elli':50,'altmış':60,'altmis':60,'yetmiş':70,'yetmis':70,'seksen':80,'doksan':90};
 const EN_SAYI={'zero':0,'oh':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,'nine':9,
   'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,'fifteen':15,'sixteen':16,'seventeen':17,'eighteen':18,'nineteen':19,
-  'twenty':20,'thirty':30,'forty':40,'fifty':50,'sixty':60,'seventy':70,'eighty':80,'ninety':90};
+  'twenty':20,'thirty':30,'forty':40,'fifty':50,'sixty':60,'seventy':70,'eighty':80,'ninety':90,
+  /* konuşma tanıma motorunun sıkça karıştırdığı eş-sesli kelimeler ("for"↔"four" gibi) */
+  'won':1,'to':2,'too':2,'for':4,'fore':4,'ate':8};
 /* geleneksel İngiliz bingo çağrı isimleri — birkaç yaygın örnek, istenirse genişletilir */
 const EN_CAGRI={"kelly's eye":1,'one little duck':2,'two little ducks':22,'unlucky for some':13,
   'legs eleven':11,'man alive':45,'top of the shop':90,'top of the house':90};
@@ -1130,9 +1144,13 @@ function sayiCoz(metinHam){
   if(!metin) return null;
   const rakam=metin.match(/\b(\d{1,2})\b/);
   if(rakam){ const n=parseInt(rakam[1],10); if(n>=1&&n<=90) return n; }
-  for(const k in EN_CAGRI){ if(metin.indexOf(k)>-1) return EN_CAGRI[k]; }
+  /* Karışıklık olmasın diye SADECE seçili mikrofon diline bakılır (Türkçe seçiliyken İngilizce
+     kelimeler, İngilizce seçiliyken Türkçe kelimeler asla eşleşmez). */
+  const ingilizceMi = (S.set.dil||'tr-TR').indexOf('en')===0;
+  const sozluk = ingilizceMi ? EN_SAYI : TR_SAYI;
+  if(ingilizceMi){ for(const k in EN_CAGRI){ if(metin.indexOf(k)>-1) return EN_CAGRI[k]; } }
   const kelimeler=metin.split(/\s+/).filter(Boolean);
-  const degerler=kelimeler.map(function(k){ return (k in TR_SAYI)?TR_SAYI[k]:((k in EN_SAYI)?EN_SAYI[k]:null); })
+  const degerler=kelimeler.map(function(k){ return (k in sozluk) ? sozluk[k] : null; })
                           .filter(function(d){ return d!==null; });
   if(!degerler.length) return null;
   if(degerler.length===1){ const v=degerler[0]; return (v>=1&&v<=90)?v:null; }
@@ -1154,15 +1172,18 @@ function micBaslat(){
   tanima=new SR();
   tanima.lang=S.set.dil||'tr-TR';
   tanima.continuous=true;
-  tanima.interimResults=false;
+  tanima.interimResults=true; /* aninda geri bildirim icin: mikrofon ses aliyor mu, hemen ekranda gorunsun */
   tanima.onresult=function(e){
+    let ara='';
     for(let i=e.resultIndex;i<e.results.length;i++){
-      if(e.results[i].isFinal) micParcaIsle(e.results[i][0].transcript);
+      if(e.results[i].isFinal){ micParcaIsle(e.results[i][0].transcript); if(micCanli) micCanli.textContent=''; }
+      else{ ara+=e.results[i][0].transcript; }
     }
+    if(ara && micCanli) micCanli.textContent='🎙️ ...'+ara;
   };
   tanima.onerror=function(e){
     if(e.error==='not-allowed'||e.error==='service-not-allowed'){ toast(t('micIzinYok'),'kotu'); micDurdur(); }
-    /* diger hatalarda (ör. no-speech) sessizce devam — onend zaten yeniden baslatacak */
+    else if(micCanli){ micCanli.textContent='⚠ '+e.error; } /* teşhis için ham tarayıcı hata kodu ekranda gösterilir */
   };
   tanima.onend=function(){ if(micAcik){ try{ tanima.start(); }catch(err){} } }; /* surekli dinleme icin kendini yeniden baslatir */
   try{ tanima.start(); micAcik=true; micUIGuncelle(); }
@@ -1215,6 +1236,7 @@ function dilSec(kod){
 function dilUIGuncelle(){
   dilTR.className = (S.set.dil==='tr-TR') ? 'btn kucuk' : 'btn ikincil kucuk';
   dilEN.className = (S.set.dil==='en-GB') ? 'btn kucuk' : 'btn ikincil kucuk';
+  dilIE.className = (S.set.dil==='en-IE') ? 'btn kucuk' : 'btn ikincil kucuk';
 }
 
 /* klavye (masaüstünde test için) */
