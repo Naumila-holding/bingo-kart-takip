@@ -659,10 +659,38 @@ function kartGorsel(k, canli){
         }
       }
     }
-    return '<div class="fotokart"><img src="'+foto+'" alt="" draggable="false">'+ic+'</div>';
+    const kutuJson=kacir(JSON.stringify(k.kutu));
+    return '<div class="fotokart" data-kutu="'+kutuJson+'"><img src="'+foto+'" alt="" draggable="false">'+ic+'</div>';
   }
   return gridHTML(k.grid,canli);
 }
+
+/* Halka/hücre boyutunu fotoğrafın GERÇEK ekran boyutuna göre orantılı ayarlar — sabit piksel
+   kullanılırsa çok kartlı/uzun fotoğraflarda (ör. 6'lık şerit) hücreler birbirine biner.
+   kapsayiciSecici: '.fotokart' (oyun/liste) ya da '.fotokart-duzenle' (tarama düzenleme). */
+function fotokartBoyutlandir(kapsayiciSecici){
+  document.querySelectorAll(kapsayiciSecici).forEach(function(kapsayici){
+    const img=kapsayici.querySelector('img');
+    if(!img) return;
+    function uygula(){
+      const rect=img.getBoundingClientRect();
+      if(!rect.width||!rect.height) return;
+      let kutu;
+      try{ kutu=JSON.parse(kapsayici.dataset.kutu||kapsayici.getAttribute('data-kutu-canli')||'null'); }catch(e){ kutu=null; }
+      if(!kutu) return;
+      const hucreW=rect.width*kutu.w/9, hucreH=rect.height*kutu.h/3;
+      const boyut=Math.max(12, Math.min(hucreW,hucreH)*0.72);
+      kapsayici.querySelectorAll('.h, .mark').forEach(function(el){
+        el.style.width=boyut+'px'; el.style.height=boyut+'px';
+        if(el.tagName==='INPUT'){ el.style.lineHeight=boyut+'px'; el.style.fontSize=Math.max(9,boyut*0.42)+'px'; }
+      });
+    }
+    if(img.complete && img.naturalWidth) uygula(); else img.addEventListener('load', uygula, {once:true});
+  });
+}
+window.addEventListener('resize', function(){
+  fotokartBoyutlandir('.fotokart'); fotokartBoyutlandir('.fotokart-duzenle');
+});
 
 function tamSatirlar(k){ let s=0; for(let i=0;i<3;i++){
   const ns=k.grid[i].filter(function(x){return x!==null;});
@@ -678,6 +706,7 @@ function kartListeCiz(){
       '<button class="btn sil kucuk" onclick="kartSil(\''+k.id+'\')">'+t('silBtn')+'</button></span></div>'+
       kartGorsel(k,false)+'</div>';
   }).join('')+'</div>';
+  fotokartBoyutlandir('.fotokart');
 }
 
 function ciz(){
@@ -692,6 +721,7 @@ function ciz(){
       (full?'<span class="bingo">'+t('bingoRozet')+'</span>':'<span class="durum">'+t('satirDurum',{n:sy})+'</span>')+'</div>'+
       kartGorsel(k,true)+'</div>';
   }).join('');
+  fotokartBoyutlandir('.fotokart');
 }
 function kacir(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 
@@ -1005,7 +1035,9 @@ function taramaGridCiz(){
   }
   if(fotoAktif){
     const vurgu='<div class="vurgu" style="left:'+(kutu.x*100).toFixed(2)+'%;top:'+(kutu.y*100).toFixed(2)+'%;width:'+(kutu.w*100).toFixed(2)+'%;height:'+(kutu.h*100).toFixed(2)+'%"></div>';
-    taramaGrid.innerHTML = '<div class="fotokart-duzenle"><img src="'+taramaKaynakFoto+'" alt="" draggable="false">'+vurgu+hucreler+'</div>';
+    const kutuJson=String(JSON.stringify(kutu)).replace(/"/g,'&quot;');
+    taramaGrid.innerHTML = '<div class="fotokart-duzenle" data-kutu="'+kutuJson+'"><img src="'+taramaKaynakFoto+'" alt="" draggable="false">'+vurgu+hucreler+'</div>';
+    fotokartBoyutlandir('.fotokart-duzenle');
   } else {
     taramaGrid.innerHTML = '<div class="grid">'+hucreler+'</div>';
   }
