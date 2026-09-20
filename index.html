@@ -231,7 +231,15 @@ body.buyuk .fotokart .mark{width:40px;height:40px;border-width:4px}
     <p class="ipucu" id="micDestekYok" data-t="micDestekYokMetin" hidden>Bu tarayıcı sesli dinlemeyi desteklemiyor (iPhone/Safari'de olabilir) — elle girişi kullan.</p>
     <p class="ipucu" data-t-html="micAciklama">Duyduğu sayıyı <b>hemen işaretlemez</b> — önce sana sorar, sen "Evet" dedikten sonra işaretlenir.
       Ses tarayıcının kendi tanıma servisiyle işlenir, kaydedilmez.</p>
+    <label data-t="sesliDilBaslik" style="margin-top:2px">🎤 Sesli tanıma dili</label>
     <div class="satir">
+      <button class="btn kucuk dilbtn" data-dil="tr-TR" data-t="dilTRBtn" onclick="dilSec('tr-TR')">Türkçe</button>
+      <button class="btn ikincil kucuk dilbtn" data-dil="en-GB" data-t="dilENBtn" onclick="dilSec('en-GB')">İngilizce</button>
+      <button class="btn ikincil kucuk dilbtn" data-dil="en-IE" data-t="dilIEBtn" onclick="dilSec('en-IE')">İngilizce (İrlanda)</button>
+      <button class="btn ikincil kucuk dilbtn" data-dil="en-US" data-t="dilUSBtn" onclick="dilSec('en-US')">İngilizce (ABD)</button>
+    </div>
+    <div class="ipucu" id="micDilEtiket" style="font-weight:700;color:var(--yesil)"></div>
+    <div class="satir" style="margin-top:10px">
       <button class="btn ikincil" id="micBtn" data-t="micBaslatBtn" onclick="micToggle()">🎤 Dinlemeyi başlat</button>
       <span class="durum" id="micDurum"></span>
     </div>
@@ -261,10 +269,10 @@ body.buyuk .fotokart .mark{width:40px;height:40px;border-width:4px}
       <label class="sw"><input type="checkbox" id="aBuyuk" onchange="ayarDegis()"><span></span></label></div>
     <div class="ayar"><div><span data-t="sesliDilBaslik">🎤 Sesli tanıma dili</span><div class="ipucu" data-t="sesliDilAciklama">Çağrıcı hangi dilde söylüyorsa onu seç</div></div>
       <span class="satir">
-        <button class="btn kucuk" id="dilTR" data-t="dilTRBtn" onclick="dilSec('tr-TR')">Türkçe</button>
-        <button class="btn ikincil kucuk" id="dilEN" data-t="dilENBtn" onclick="dilSec('en-GB')">İngilizce</button>
-        <button class="btn ikincil kucuk" id="dilIE" data-t="dilIEBtn" onclick="dilSec('en-IE')">İngilizce (İrlanda)</button>
-        <button class="btn ikincil kucuk" id="dilUS" data-t="dilUSBtn" onclick="dilSec('en-US')">İngilizce (ABD)</button>
+        <button class="btn kucuk dilbtn" data-dil="tr-TR" data-t="dilTRBtn" onclick="dilSec('tr-TR')">Türkçe</button>
+        <button class="btn ikincil kucuk dilbtn" data-dil="en-GB" data-t="dilENBtn" onclick="dilSec('en-GB')">İngilizce</button>
+        <button class="btn ikincil kucuk dilbtn" data-dil="en-IE" data-t="dilIEBtn" onclick="dilSec('en-IE')">İngilizce (İrlanda)</button>
+        <button class="btn ikincil kucuk dilbtn" data-dil="en-US" data-t="dilUSBtn" onclick="dilSec('en-US')">İngilizce (ABD)</button>
       </span>
     </div>
   </div>
@@ -337,6 +345,7 @@ const T={
   buyukBaslik:'🔎 Büyük görünüm', buyukAciklama:'Kutucuklar ve yazılar büyür',
   sesliDilBaslik:'🎤 Sesli tanıma dili', sesliDilAciklama:'Çağrıcı hangi dilde söylüyorsa onu seç',
   dilTRBtn:'Türkçe', dilENBtn:'İngilizce', dilIEBtn:'İngilizce (İrlanda)', dilUSBtn:'İngilizce (ABD)',
+  micSuAnDinlenen:'🎧 Şu an dinlenen dil: {dil}',
   aiH2:'🤖 AI Ajanı (DeepSeek)',
   dsVarMetin:'Anahtar kayıtlı — fotoğraf ile kart okuma açık.', dsYokMetin:'Anahtar girilmedi — AI özellikleri kapalı.',
   dsLabel:'DeepSeek API Anahtarı',
@@ -414,6 +423,7 @@ const T={
   buyukBaslik:'🔎 Large view', buyukAciklama:'Bigger cells and text',
   sesliDilBaslik:'🎤 Voice recognition language', sesliDilAciklama:'Pick the language the caller speaks',
   dilTRBtn:'Turkish', dilENBtn:'English', dilIEBtn:'English (Ireland)', dilUSBtn:'English (US)',
+  micSuAnDinlenen:'🎧 Currently listening in: {dil}',
   aiH2:'🤖 AI Agent (DeepSeek)',
   dsVarMetin:'Key saved — photo card scanning is on.', dsYokMetin:'No key entered — AI features are off.',
   dsLabel:'DeepSeek API Key',
@@ -880,17 +890,12 @@ const DS_SISTEM_PROMPT =
 '- Each row has exactly 5 printed numbers and 4 blank cells.\n'+
 '- Column 1 holds numbers 1-9, column 2 holds 10-19, column 3 holds 20-29, ... column 8 holds 80-89, column 9 holds 80-90.\n'+
 '- Within a column, numbers read top to bottom in ascending order.\n'+
-'There may be several separate tickets in the photo (e.g. a strip of tickets). Read every ticket you can clearly identify.\n'+
+'There may be several separate tickets in the photo (e.g. a strip of tickets, possibly arranged in two side-by-side '+
+'columns). Read EVERY ticket you can clearly identify, in reading order (left-to-right, top-to-bottom).\n'+
 'For every cell output the printed number, or null if the cell is blank.\n'+
-'Also estimate, for each ticket, a bounding box, normalized 0-1 relative to the WHOLE photo\'s width/height '+
-'(x,y = top-left corner, w,h = width/height). CRITICAL: this box must tightly bound ONLY the 3x9 grid of number '+
-'cells itself — its edges must touch the outer edge of the cell borders exactly. Do NOT include any colored '+
-'decorative frame, border, margin, shadow, header text or logo around the ticket — those are NOT part of the box, '+
-'even if they are printed right next to the grid. Overestimating the box (including anything outside the grid of '+
-'cells) will make the box wrong, so when unsure, prefer a box that is slightly too small over one that is too big.\n'+
 'Respond with ONLY valid JSON, no explanation, no markdown code fences, in exactly this shape:\n'+
-'{"cards":[{"box":{"x":0-1,"y":0-1,"w":0-1,"h":0-1},"rows":[[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9]]}]}\n'+
-'Each "rows" array must have exactly 3 rows, each row exactly 9 items (a number or null). If unsure of the exact box, give your best estimate.';
+'{"cards":[{"rows":[[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9],[c1,c2,c3,c4,c5,c6,c7,c8,c9]]}]}\n'+
+'Each "rows" array must have exactly 3 rows, each row exactly 9 items (a number or null).';
 
 async function deepseekIstekAt(govde, anahtar){
   let yanit;
@@ -986,8 +991,9 @@ function kuyrukKur(json, kaynakDataUrl){
     }
     const doluMu=g.some(function(row){ return row.some(function(v){ return v!==null; }); });
     if(!doluMu) continue;
-    const kutu = (kaynakDataUrl && c && kutuGecerliMi(c.box)) ? {x:+c.box.x,y:+c.box.y,w:+c.box.w,h:+c.box.h} : null;
-    temiz.push({grid:g, kutu:kutu});
+    /* Fotoğraf-üstü işaretleme (kutu/foto) kapatıldı — kalite tutarsızdı (biniş/kayma).
+       Artık taranan kart da elle girilen kartla aynı, güvenilir dijital ızgarayla gösterilir. */
+    temiz.push({grid:g, kutu:null});
   }
   if(!temiz.length){ toast(t('okunakliKartYok'),'kotu'); return; }
   taramaKuyruk=temiz; taramaIdx=0;
@@ -1265,10 +1271,16 @@ function dilSec(kod){
   S.set.dil=kod; kaydet(); dilUIGuncelle();
   if(micAcik){ micDurdur(); micBaslat(); }
 }
+/* Hem Ayarlar'daki hem Oyun ekranındaki dil düğmelerini (aynı .dilbtn sınıfını paylaşırlar)
+   tek seferde günceller — ikisi de her zaman aynı seçili dili gösterir. */
 function dilUIGuncelle(){
-  dilTR.className = (S.set.dil==='tr-TR') ? 'btn kucuk' : 'btn ikincil kucuk';
-  dilEN.className = (S.set.dil==='en-GB') ? 'btn kucuk' : 'btn ikincil kucuk';
-  dilIE.className = (S.set.dil==='en-IE') ? 'btn kucuk' : 'btn ikincil kucuk';
+  const suanki = S.set.dil||'tr-TR';
+  document.querySelectorAll('.dilbtn').forEach(function(b){
+    b.className = 'btn kucuk dilbtn'+(b.dataset.dil===suanki?'':' ikincil');
+  });
+  const eslesme={'tr-TR':'dilTRBtn','en-GB':'dilENBtn','en-IE':'dilIEBtn','en-US':'dilUSBtn'};
+  const etiket=document.getElementById('micDilEtiket');
+  if(etiket) etiket.textContent=t('micSuAnDinlenen',{dil:t(eslesme[suanki]||'dilTRBtn')});
 }
 
 /* klavye (masaüstünde test için) */
