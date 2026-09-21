@@ -255,6 +255,12 @@ body.alt .kagit-grid,body.buyuk .kagit-grid{grid-template-columns:1fr}
       <button class="btn ikincil kucuk modbtn" data-mod="surekli" data-t="micModSurekli" onclick="micModSec('surekli')">Sürekli</button>
     </div>
     <div class="ipucu" data-t="micModAciklama">Tek haneli sayıları anlamıyorsa modu değiştirip dene.</div>
+    <div class="satir" style="margin-top:10px">
+      <button class="btn kucuk" data-t="micTestBtn" onclick="micTestBaslat()">🧪 Mikrofon testi</button>
+      <button class="btn ikincil kucuk" data-t="micKopyalaBtn" onclick="micLogKopyala()">📋 Günlüğü kopyala</button>
+    </div>
+    <div class="ipucu" data-t="micTestNot">Test iki dinleme modunu sırayla dener; bitince özet aşağıda görünür (ekran görüntüsü alabilirsin) ve günlük panoya kopyalanır.</div>
+    <div id="micTestDurum" class="ipucu" style="font-weight:700;color:var(--yesil);min-height:17px;white-space:pre-wrap"></div>
     <details id="micLogDetay" open style="margin-top:8px">
       <summary data-t="micLogBaslik" style="cursor:pointer;font-size:12.5px;color:var(--soluk);font-weight:600">🔧 Mikrofon günlüğü (teşhis)</summary>
       <pre id="micLogPre" style="margin:6px 0 0;padding:8px;background:#f1f4f2;border-radius:8px;font-size:11.5px;line-height:1.35;max-height:190px;overflow:auto;white-space:pre-wrap;word-break:break-word"></pre>
@@ -327,6 +333,10 @@ const T={
   micModBaslik:'🎚️ Dinleme modu', micModTek:'Tek seferlik', micModSurekli:'Sürekli',
   micModAciklama:'Tek seferlik: her konuşmadan sonra dinleme kısa süre yenilenir (kısa/tek haneli sayılar için genelde daha güvenilir; telefonda küçük bir "tık" sesi çıkabilir). Sürekli: hiç kesilmeden dinler.',
   micLogBaslik:'🔧 Mikrofon günlüğü (teşhis)',
+  micTestBtn:'🧪 Mikrofon testi', micKopyalaBtn:'📋 Günlüğü kopyala',
+  micTestNot:'Test iki dinleme modunu sırayla dener; bitince özet aşağıda görünür (ekran görüntüsü alabilirsin) ve günlük panoya kopyalanır.',
+  micTestSay:'🎙️ {mod} — şimdi "{k}" de, aralarında bekle… ({n})',
+  micKopyalandi:'Günlük kopyalandı — sohbete yapıştır.', micKopyalanamadi:'Kopyalanamadı — günlük kutusundaki metni elle seçip kopyala.',
   kagitAdVarsayilan:'Kağıt {n}', kartNo:'Kart {n}', kartOnek:'Kart {n} · ',
   degerAralik:'{i}. satır: {v} geçersiz — 1 ile {max} arasında olmalı.',
   sayiAdedi:'{a} sayı okundu, {b} olmalı — eksik ya da fazla olabilir, kontrol et.',
@@ -420,6 +430,10 @@ const T={
   micModBaslik:'🎚️ Listening mode', micModTek:'One-shot', micModSurekli:'Continuous',
   micModAciklama:'One-shot: listening restarts after every utterance (usually more reliable for short / single-digit numbers; the phone may make a small "tick" sound). Continuous: never stops listening.',
   micLogBaslik:'🔧 Microphone log (diagnostics)',
+  micTestBtn:'🧪 Microphone test', micKopyalaBtn:'📋 Copy log',
+  micTestNot:'The test tries both listening modes in turn; when it ends a summary appears below (you can take a screenshot) and the log is copied.',
+  micTestSay:'🎙️ {mod} — now say "{k}", pausing between… ({n})',
+  micKopyalandi:'Log copied — paste it into the chat.', micKopyalanamadi:"Couldn't copy — select the text in the log box and copy it by hand.",
   kagitAdVarsayilan:'Sheet {n}', kartNo:'Card {n}', kartOnek:'Card {n} · ',
   degerAralik:'Row {i}: {v} is invalid — must be between 1 and {max}.',
   sayiAdedi:'{a} numbers read, expected {b} — some may be missing or extra, please check.',
@@ -1342,6 +1356,73 @@ function micModSec(m){
   S.set.micMod=m; kaydet(); micModUIGuncelle();
   micLog('mod değişti: '+(m==='tek'?'tek seferlik':'sürekli'));
   if(micAcik){ micDurdur(); micBaslat(); }
+}
+/* --- Mikrofon testi: iki modu (tek seferlik, sürekli) sırayla 9'ar saniye dener, motorun ham
+   olaylarını günlüğe yazar ve sonucu panoya kopyalar — kullanıcı sadece rakamları söyler. --- */
+let micTestAktif=false, micTestSure=9;
+function micSonucSatiri(sonuc){
+  const adaylar=[]; for(let a=0;a<sonuc.length;a++) adaylar.push(sonuc[a].transcript);
+  let s=(sonuc.isFinal?'KESİN: ':'ara: ')+adaylar.slice(0,3).map(function(x){ return '"'+x+'"'; }).join(' / ');
+  if(sonuc.isFinal){ let n=null; for(let i=0;i<adaylar.length&&n===null;i++) n=sayiCoz(adaylar[i]); s+=n!==null?('  → sayı '+n):'  → ANLAŞILAMADI'; }
+  return s;
+}
+function micTestBaslat(){
+  if(!micDestekVarMi()){ toast(t('micDesteklenmiyor'),'kotu'); return; }
+  if(micTestAktif) return;
+  if(micAcik) micDurdur();
+  micTestAktif=true; micGunluk=[];
+  const en=(S.set.dil||'tr-TR').indexOf('en')===0, kelimeler=en?'four, five, six':'dört, beş, altı';
+  micLog('=== MİKROFON TESTİ === dil: '+(S.set.dil||'tr-TR')+' | mod ayarı: '+(S.set.micMod||'tek')+' | '+navigator.userAgent.slice(0,150));
+  const modlar=['tek','surekli']; let idx=0; const ozetler=[];
+  function sonraki(){
+    if(idx>=modlar.length){ micLog('=== TEST BİTTİ ==='); micTestAktif=false; micTestDurum.textContent=micTestOzeti(ozetler); micLogKopyala(); return; }
+    const mod=modlar[idx++], ad=(mod==='tek'?'TEK SEFERLİK':'SÜREKLİ');
+    const o={ad:ad,ses:false,konusma:false,ara:0,kesin:0,sayilar:[],anlasilamayan:[],hatalar:[]}; ozetler.push(o);
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition; const r=new SR();
+    r.lang=S.set.dil||'tr-TR'; r.continuous=(mod==='surekli'); r.interimResults=true; r.maxAlternatives=5;
+    micLog('--- mod: '+ad+' — "'+kelimeler+'" de, aralarında bekle ---');
+    let kalan=micTestSure, bitti=false;
+    micTestDurum.textContent=t('micTestSay',{mod:ad,k:kelimeler,n:kalan});
+    const say=setInterval(function(){ kalan--; if(kalan>0) micTestDurum.textContent=t('micTestSay',{mod:ad,k:kelimeler,n:kalan}); },1000);
+    r.onstart=function(){ micLog('dinleme başladı'); };
+    r.onaudiostart=function(){ micLog('mikrofon açık'); };
+    r.onsoundstart=function(){ o.ses=true; micLog('ses algılandı'); };
+    r.onspeechstart=function(){ o.konusma=true; micLog('konuşma algılandı'); };
+    r.onspeechend=function(){ micLog('konuşma bitti'); };
+    r.onnomatch=function(){ micLog('eşleşme yok (nomatch)'); };
+    r.onerror=function(e){ o.hatalar.push(e.error); micLog('HATA: '+e.error); };
+    r.onresult=function(e){
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const s=e.results[i]; micLog(micSonucSatiri(s));
+        if(s.isFinal){
+          o.kesin++; let n=null; for(let a=0;a<s.length&&n===null;a++) n=sayiCoz(s[a].transcript);
+          if(n!==null) o.sayilar.push(n); else o.anlasilamayan.push('"'+s[0].transcript+'"');
+        } else o.ara++;
+      }
+    };
+    r.onend=function(){ micLog('oturum kapandı'); if(!bitti){ setTimeout(function(){ if(!bitti){ try{ r.start(); }catch(err){ micLog('yeniden başlatma hatası: '+err.name); } } },80); } };
+    setTimeout(function(){ bitti=true; clearInterval(say); try{ r.onend=null; r.stop(); }catch(e){} setTimeout(sonraki,700); }, micTestSure*1000);
+    try{ r.start(); }catch(e){ micLog('başlatılamadı: '+e.name); }
+  }
+  sonraki();
+}
+/* Testin tek bakışta okunur özeti (tek ekran görüntüsü yeter). */
+function micTestOzeti(oz){
+  return 'ÖZET ('+(S.set.dil||'tr-TR')+')\n'+oz.map(function(o){
+    return o.ad+': ses='+(o.ses?'evet':'HAYIR')+', konuşma='+(o.konusma?'evet':'HAYIR')+', ara='+o.ara+', kesin='+o.kesin+
+      ', sayı=['+o.sayilar.join(',')+']'+(o.anlasilamayan.length?', anlaşılamayan='+o.anlasilamayan.join(' '):'')+(o.hatalar.length?', hata='+o.hatalar.join(','):'');
+  }).join('\n');
+}
+/* Günlüğü (eskiden yeniye) panoya kopyalar. */
+function micLogKopyala(){
+  const metin=['ortam: dil='+(S.set.dil||'tr-TR')+' mod='+(S.set.micMod||'tek')+' | '+navigator.userAgent.slice(0,150)].concat(micGunluk).join('\n');
+  function tamam(){ toast(t('micKopyalandi'),'iyi'); }
+  function yedek(){
+    try{ const ta=document.createElement('textarea'); ta.value=metin; ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta); ta.focus(); ta.select(); const ok=document.execCommand('copy'); ta.remove();
+      if(ok) tamam(); else toast(t('micKopyalanamadi'),'kotu'); }catch(e){ toast(t('micKopyalanamadi'),'kotu'); }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(metin).then(tamam,yedek); } else yedek();
 }
 function micModUIGuncelle(){
   const suanki=S.set.micMod==='surekli'?'surekli':'tek';
