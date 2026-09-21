@@ -249,6 +249,16 @@ body.alt .kagit-grid,body.buyuk .kagit-grid{grid-template-columns:1fr}
     </div>
     <div id="micCanli" class="ipucu" style="font-style:italic;min-height:17px"></div>
     <div id="micGecmis" class="ipucu"></div>
+    <label data-t="micModBaslik" style="margin-top:8px">🎚️ Dinleme modu</label>
+    <div class="satir">
+      <button class="btn kucuk modbtn" data-mod="tek" data-t="micModTek" onclick="micModSec('tek')">Tek seferlik</button>
+      <button class="btn ikincil kucuk modbtn" data-mod="surekli" data-t="micModSurekli" onclick="micModSec('surekli')">Sürekli</button>
+    </div>
+    <div class="ipucu" data-t="micModAciklama">Tek haneli sayıları anlamıyorsa modu değiştirip dene.</div>
+    <details id="micLogDetay" open style="margin-top:8px">
+      <summary data-t="micLogBaslik" style="cursor:pointer;font-size:12.5px;color:var(--soluk);font-weight:600">🔧 Mikrofon günlüğü (teşhis)</summary>
+      <pre id="micLogPre" style="margin:6px 0 0;padding:8px;background:#f1f4f2;border-radius:8px;font-size:11.5px;line-height:1.35;max-height:190px;overflow:auto;white-space:pre-wrap;word-break:break-word"></pre>
+    </details>
   </div>
 </section>
 
@@ -304,7 +314,7 @@ body.alt .kagit-grid,body.buyuk .kagit-grid{grid-template-columns:1fr}
 /* ================== VERİ ================== */
 const LS='bingoSnap.v1';
 const LS_DS='bingoSnap.dsKey'; /* DeepSeek anahtari ayri anahtarda tutulur, dilersen kolayca ayiklayabilesin */
-let S={cards:[],called:[],anons:{},set:{ses:true,tit:true,buyuk:false,dil:'tr-TR',uiDil:'tr',kagitYanYana:true},sayac:1,photos:{},sheets:{},sheetSayac:0};
+let S={cards:[],called:[],anons:{},set:{ses:true,tit:true,buyuk:false,dil:'tr-TR',uiDil:'tr',kagitYanYana:true,micMod:'tek'},sayac:1,photos:{},sheets:{},sheetSayac:0};
 let sonEklenen=null;
 
 /* ================== ÇEVİRİ (TR/EN arayüz dili) ================== */
@@ -314,6 +324,9 @@ const T={
   yeniTurBaslik:'🔄 Yeni tur', yeniTurAciklama:'Yeni bir oyun için tüm kartları ve çağrılan sayıları temizler',
   yeniTurBtn:'Yeni Tur', yeniTurOnay:'Yeni tur başlasın mı? Çağrılan sayılar VE tüm kartlar silinecek — bu geri alınamaz.',
   yeniTurBasladi:'Yeni tur başladı — şimdi yeni kart(lar)ı ekle.',
+  micModBaslik:'🎚️ Dinleme modu', micModTek:'Tek seferlik', micModSurekli:'Sürekli',
+  micModAciklama:'Tek seferlik: her konuşmadan sonra dinleme kısa süre yenilenir (kısa/tek haneli sayılar için genelde daha güvenilir; telefonda küçük bir "tık" sesi çıkabilir). Sürekli: hiç kesilmeden dinler.',
+  micLogBaslik:'🔧 Mikrofon günlüğü (teşhis)',
   kagitAdVarsayilan:'Kağıt {n}', kartNo:'Kart {n}', kartOnek:'Kart {n} · ',
   degerAralik:'{i}. satır: {v} geçersiz — 1 ile {max} arasında olmalı.',
   sayiAdedi:'{a} sayı okundu, {b} olmalı — eksik ya da fazla olabilir, kontrol et.',
@@ -404,6 +417,9 @@ const T={
   yeniTurBaslik:'🔄 New round', yeniTurAciklama:'Clears all cards and called numbers to start a fresh game',
   yeniTurBtn:'New Round', yeniTurOnay:'Start a new round? Called numbers AND all cards will be deleted — this cannot be undone.',
   yeniTurBasladi:'New round started — now add your new card(s).',
+  micModBaslik:'🎚️ Listening mode', micModTek:'One-shot', micModSurekli:'Continuous',
+  micModAciklama:'One-shot: listening restarts after every utterance (usually more reliable for short / single-digit numbers; the phone may make a small "tick" sound). Continuous: never stops listening.',
+  micLogBaslik:'🔧 Microphone log (diagnostics)',
   kagitAdVarsayilan:'Sheet {n}', kartNo:'Card {n}', kartOnek:'Card {n} · ',
   degerAralik:'Row {i}: {v} is invalid — must be between 1 and {max}.',
   sayiAdedi:'{a} numbers read, expected {b} — some may be missing or extra, please check.',
@@ -1262,19 +1278,50 @@ function micToggle(){
   if(micAcik) micDurdur(); else micBaslat();
 }
 
+/* --- mikrofon günlüğü: tarayıcının ham konuşma-tanıma olayları ekranda gösterilir (teşhis için) --- */
+let micGunluk=[], micBasZaman=0;
+function micLog(s){
+  const d=new Date();
+  const z=('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2)+'.'+('00'+d.getMilliseconds()).slice(-3);
+  micGunluk.push(z+'  '+s); if(micGunluk.length>40) micGunluk.shift();
+  const el=document.getElementById('micLogPre');
+  if(el) el.textContent=micGunluk.slice().reverse().join('\n');
+}
+/* Motor kapanınca kendini yeniden başlatır; hemen (0,7 sn içinde) kapanıyorsa (izin/ağ sorunu) döngüye
+   girmemek için bekler; start() hata verirse sessizce ölmek yerine tekrar dener. */
+function micYenidenBaslat(){
+  if(!micAcik||!tanima) return;
+  const kisaMi=Date.now()-micBasZaman<700;
+  setTimeout(function(){
+    if(!micAcik) return;
+    try{ tanima.start(); micBasZaman=Date.now(); }
+    catch(err){ micLog('yeniden başlatma hatası ('+err.name+') — 0,4 sn sonra tekrar'); setTimeout(micYenidenBaslat,400); }
+  }, kisaMi?1200:60);
+}
+
 function micBaslat(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   tanima=new SR();
+  /* İki mod: "sürekli" (continuous) ya da "tek seferlik" — kısa tek kelimelerde (tek haneli sayılar) bazı
+     telefonlarda tek seferlik mod daha güvenilir kesin sonuç verir; her konuşmadan sonra kendini yeniler. */
+  const tek=(S.set.micMod==='tek');
   tanima.lang=S.set.dil||'tr-TR';
-  tanima.continuous=true;
+  tanima.continuous=!tek;
   tanima.interimResults=true; /* aninda geri bildirim icin: mikrofon ses aliyor mu, hemen ekranda gorunsun */
   tanima.maxAlternatives=5;   /* motorun aday yazimlarinin (ör. "tow"/"two"/"2") hepsi denenir */
+  tanima.onstart=function(){ micLog('dinleme başladı ('+tanima.lang+', '+(tek?'tek seferlik':'sürekli')+')'); };
+  tanima.onaudiostart=function(){ micLog('mikrofon açık'); };
+  tanima.onsoundstart=function(){ micLog('ses algılandı'); };
+  tanima.onspeechstart=function(){ micLog('konuşma algılandı'); };
+  tanima.onspeechend=function(){ micLog('konuşma bitti'); };
+  tanima.onnomatch=function(){ micLog('eşleşme yok (nomatch)'); };
   tanima.onresult=function(e){
     let ara='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const sonuc=e.results[i];
+      const adaylar=[]; for(let a=0;a<sonuc.length;a++) adaylar.push(sonuc[a].transcript);
+      micLog((sonuc.isFinal?'KESİN: ':'ara: ')+adaylar.slice(0,3).map(function(x){ return '"'+x+'"'; }).join(' / '));
       if(sonuc.isFinal){
-        const adaylar=[]; for(let a=0;a<sonuc.length;a++) adaylar.push(sonuc[a].transcript);
         if(micAraZaman){ clearTimeout(micAraZaman); micAraZaman=null; } micAraMetin='';
         micAdayIsle(adaylar,false); if(micCanli) micCanli.textContent='';
       } else { ara+=sonuc[0].transcript; }
@@ -1282,12 +1329,25 @@ function micBaslat(){
     if(ara){ if(micCanli) micCanli.textContent='🎙️ ...'+ara; micAraPlanla(ara); }
   };
   tanima.onerror=function(e){
+    micLog('HATA: '+e.error);
     if(e.error==='not-allowed'||e.error==='service-not-allowed'){ toast(t('micIzinYok'),'kotu'); micDurdur(); }
     else if(micCanli){ micCanli.textContent='⚠ '+e.error; } /* teşhis için ham tarayıcı hata kodu ekranda gösterilir */
   };
-  tanima.onend=function(){ if(micAcik){ try{ tanima.start(); }catch(err){} } }; /* surekli dinleme icin kendini yeniden baslatir */
-  try{ tanima.start(); micAcik=true; micUIGuncelle(); }
-  catch(e){ toast(t('micBaslatilamadi'),'kotu'); }
+  tanima.onend=function(){ micLog('dinleme kapandı'+(micAcik?' → yeniden başlıyor':'')); micYenidenBaslat(); };
+  try{ tanima.start(); micBasZaman=Date.now(); micAcik=true; micUIGuncelle(); }
+  catch(e){ micLog('başlatılamadı: '+e.name); toast(t('micBaslatilamadi'),'kotu'); }
+}
+
+function micModSec(m){
+  S.set.micMod=m; kaydet(); micModUIGuncelle();
+  micLog('mod değişti: '+(m==='tek'?'tek seferlik':'sürekli'));
+  if(micAcik){ micDurdur(); micBaslat(); }
+}
+function micModUIGuncelle(){
+  const suanki=S.set.micMod==='surekli'?'surekli':'tek';
+  document.querySelectorAll('.modbtn').forEach(function(b){
+    b.className='btn kucuk modbtn'+(b.dataset.mod===suanki?'':' ikincil');
+  });
 }
 
 function micDurdur(){
@@ -1331,6 +1391,7 @@ function micAdayIsle(adaylar,araMi){
      kaldıysa (ör. İngilizce konuşulurken Türkçe dinleniyorsa) bu hemen ekranda görülür. */
   micGecmis.textContent = n!==null ? t('micDuyuldu',{metin:kullanilan,n:n})
     : t('micAnlasilamadi',{metin:liste.slice(0,3).join('" / "')})+' ('+dilAdi(S.set.dil||'tr-TR')+')';
+  micLog(n!==null ? ('  → sayı: '+n+(araMi?' (ara sonuçtan)':'')) : ('  → anlaşılamadı ('+dilAdi(S.set.dil||'tr-TR')+')'));
   if(n===null) return;
   /* ara sonuçtan zaten sorulmuş aynı sayı, kısa süre sonra kesin sonuç olarak da gelirse tekrar sorma */
   if(!araMi && micSonIslenen.ara && micSonIslenen.n===n && Date.now()-micSonIslenen.z<3000){ micSonIslenen.ara=false; return; }
@@ -1383,7 +1444,7 @@ document.addEventListener('keydown',function(e){
 });
 
 /* ================== BAŞLAT ================== */
-yukle(); ceviriUygula(); ayarYaz(); dsAyarYaz(); dilUIGuncelle(); anonsGuncelle(false); kartListeCiz(); ciz(); ekranCiz();
+yukle(); ceviriUygula(); ayarYaz(); dsAyarYaz(); dilUIGuncelle(); micModUIGuncelle(); anonsGuncelle(false); kartListeCiz(); ciz(); ekranCiz();
 if(!micDestekVarMi()){ micBtn.disabled=true; micBtn.textContent=t('micBuTarayiciYok'); micDestekYok.hidden=false; }
 if(S.cards.length) git('oyun');
 </script>
