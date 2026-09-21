@@ -1198,11 +1198,34 @@ const TR_SAYI={'sıfır':0,'sifir':0,'bir':1,'iki':2,'üç':3,'uc':3,'dört':4,'
 const EN_SAYI={'zero':0,'oh':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,'nine':9,
   'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,'fifteen':15,'sixteen':16,'seventeen':17,'eighteen':18,'nineteen':19,
   'twenty':20,'thirty':30,'forty':40,'fifty':50,'sixty':60,'seventy':70,'eighty':80,'ninety':90,
-  /* konuşma tanıma motorunun sıkça karıştırdığı eş-sesli kelimeler ("for"↔"four" gibi) */
-  'won':1,'to':2,'too':2,'tree':3,'free':3,'for':4,'fore':4,'ate':8};
+  /* konuşma tanıma motorunun sıkça karıştırdığı eş-sesli / yakın-sesli kelimeler ("for"↔"four", "tow"↔"two" gibi) */
+  'wan':1,'won':1,'to':2,'too':2,'tow':2,'toe':2,'tu':2,'tue':2,'tree':3,'free':3,'thee':3,
+  'for':4,'fore':4,'fife':5,'sicks':6,'sick':6,'sics':6,'sex':6,'sevin':7,'ate':8,'ait':8,'nein':9,'tin':10};
 /* geleneksel İngiliz bingo çağrı isimleri — birkaç yaygın örnek, istenirse genişletilir */
 const EN_CAGRI={"kelly's eye":1,'one little duck':2,'two little ducks':22,'unlucky for some':13,
   'legs eleven':11,'man alive':45,'top of the shop':90,'top of the house':90};
+
+/* Levenshtein uzaklığı — kısa/eksik duyulan tek kelimeleri ("sevn", "fiv", "thre") en yakın sayı
+   kelimesine bağlamak için. */
+function duzenMesafesi(a,b){
+  const d=[]; for(let i=0;i<=a.length;i++){ d[i]=[i]; } for(let j=1;j<=b.length;j++) d[0][j]=j;
+  for(let i=1;i<=a.length;i++) for(let j=1;j<=b.length;j++)
+    d[i][j]=Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[a.length][b.length];
+}
+/* Sözlükte tam yoksa: uzaklığı tam 1 olan TEK bir sayıya işaret eden kelime varsa onu döndürür;
+   birden çok farklı sayıya yakınsa (ör. "fine" → five/nine) belirsizdir, null. */
+function bulanikSayi(kelime,sozluk){
+  if(kelime.length<3) return null;
+  let bulunan=null, belirsiz=false;
+  for(const k in sozluk){
+    if(Math.abs(k.length-kelime.length)>1) continue;
+    if(duzenMesafesi(kelime,k)===1){
+      if(bulunan===null) bulunan=sozluk[k]; else if(bulunan!==sozluk[k]) belirsiz=true;
+    }
+  }
+  return (bulunan!==null && !belirsiz) ? bulunan : null;
+}
 
 /* Duyulan metni 1-90 arası bir sayıya çözümler; çözemezse null döner (yok sayılır). */
 function sayiCoz(metinHam){
@@ -1220,7 +1243,11 @@ function sayiCoz(metinHam){
   const kelimeler=metin.split(/\s+/).filter(Boolean);
   const degerler=kelimeler.map(function(k){ return (k in sozluk) ? sozluk[k] : null; })
                           .filter(function(d){ return d!==null; });
-  if(!degerler.length) return null;
+  if(!degerler.length){
+    /* Tek kelimelik kısa konuşmalar sık bozuk yazılır ("sevn", "fiv"): tek kelimeyse en yakın sayı kelimesine bak */
+    if(kelimeler.length===1){ const v=bulanikSayi(kelimeler[0],sozluk); if(v!==null && v>=1 && v<=90) return v; }
+    return null;
+  }
   if(degerler.length===1){ const v=degerler[0]; return (v>=1&&v<=90)?v:null; }
   const a=degerler[degerler.length-2], b=degerler[degerler.length-1];
   if(a>=10 && a%10===0 && b>=1 && b<=9){ const v=a+b; return (v<=90)?v:null; } /* "kırk yedi" / "forty seven" */
@@ -1241,13 +1268,18 @@ function micBaslat(){
   tanima.lang=S.set.dil||'tr-TR';
   tanima.continuous=true;
   tanima.interimResults=true; /* aninda geri bildirim icin: mikrofon ses aliyor mu, hemen ekranda gorunsun */
+  tanima.maxAlternatives=5;   /* motorun aday yazimlarinin (ör. "tow"/"two"/"2") hepsi denenir */
   tanima.onresult=function(e){
     let ara='';
     for(let i=e.resultIndex;i<e.results.length;i++){
-      if(e.results[i].isFinal){ micParcaIsle(e.results[i][0].transcript); if(micCanli) micCanli.textContent=''; }
-      else{ ara+=e.results[i][0].transcript; }
+      const sonuc=e.results[i];
+      if(sonuc.isFinal){
+        const adaylar=[]; for(let a=0;a<sonuc.length;a++) adaylar.push(sonuc[a].transcript);
+        if(micAraZaman){ clearTimeout(micAraZaman); micAraZaman=null; } micAraMetin='';
+        micAdayIsle(adaylar,false); if(micCanli) micCanli.textContent='';
+      } else { ara+=sonuc[0].transcript; }
     }
-    if(ara && micCanli) micCanli.textContent='🎙️ ...'+ara;
+    if(ara){ if(micCanli) micCanli.textContent='🎙️ ...'+ara; micAraPlanla(ara); }
   };
   tanima.onerror=function(e){
     if(e.error==='not-allowed'||e.error==='service-not-allowed'){ toast(t('micIzinYok'),'kotu'); micDurdur(); }
@@ -1260,6 +1292,7 @@ function micBaslat(){
 
 function micDurdur(){
   micAcik=false;
+  if(micAraZaman){ clearTimeout(micAraZaman); micAraZaman=null; } micAraMetin='';
   if(tanima){ try{ tanima.onend=null; tanima.stop(); }catch(e){} }
   micUIGuncelle(); micOnayGizle();
 }
@@ -1273,16 +1306,39 @@ function micUIGuncelle(){
 const DIL_ESLESME={'tr-TR':'dilTRBtn','en-GB':'dilENBtn','en-IE':'dilIEBtn','en-US':'dilUSBtn'};
 function dilAdi(kod){ return t(DIL_ESLESME[kod]||'dilTRBtn'); }
 
-function micParcaIsle(metinHam){
-  const n=sayiCoz(metinHam);
+let micSonIslenen={n:null,z:0,ara:false}, micAraZaman=null, micAraMetin='';
+
+/* Motor bir konuşmayı "kesinleştirmezse" (kısa tek kelimelerde sık olur) ara sonuç 1,3 sn
+   yeni bir şey gelmezse konuşma bitmiş sayılır ve elimizdeki ara metin değerlendirilir.
+   Yine de işaretlemez — önce kullanıcıya sorar (çekirdek ilke değişmedi). */
+function micAraPlanla(metin){
+  micAraMetin=metin;
+  if(micAraZaman) clearTimeout(micAraZaman);
+  micAraZaman=setTimeout(function(){
+    micAraZaman=null;
+    const m=micAraMetin; micAraMetin='';
+    if(m && sayiCoz(m)!==null) micAdayIsle([m],true);
+  },1300);
+}
+
+/* Motorun döndürdüğü tüm alternatif yazımları (ör. "tow" / "two" / "2") sırayla dener; çözülen
+   ilk aday kazanır. Hiçbiri çözülmezse ilk üç aday ve dinlenen dil ekranda gösterilir. */
+function micAdayIsle(adaylar,araMi){
+  const liste=adaylar.filter(function(a){ return a && String(a).trim(); });
+  let n=null, kullanilan=liste[0]||'';
+  for(let i=0;i<liste.length;i++){ const v=sayiCoz(liste[i]); if(v!==null){ n=v; kullanilan=liste[i]; break; } }
   /* "anlaşılamadı" durumunda hangi dilde dinlendiğini de gösteririz — yanlış dil seçili
      kaldıysa (ör. İngilizce konuşulurken Türkçe dinleniyorsa) bu hemen ekranda görülür. */
-  micGecmis.textContent = n!==null ? t('micDuyuldu',{metin:metinHam,n:n})
-    : t('micAnlasilamadi',{metin:metinHam})+' ('+dilAdi(S.set.dil||'tr-TR')+')';
+  micGecmis.textContent = n!==null ? t('micDuyuldu',{metin:kullanilan,n:n})
+    : t('micAnlasilamadi',{metin:liste.slice(0,3).join('" / "')})+' ('+dilAdi(S.set.dil||'tr-TR')+')';
   if(n===null) return;
+  /* ara sonuçtan zaten sorulmuş aynı sayı, kısa süre sonra kesin sonuç olarak da gelirse tekrar sorma */
+  if(!araMi && micSonIslenen.ara && micSonIslenen.n===n && Date.now()-micSonIslenen.z<3000){ micSonIslenen.ara=false; return; }
+  micSonIslenen={n:n,z:Date.now(),ara:!!araMi};
   if(isaretli(n)){ toast(t('micZatenIsaretli',{n:n}),''); return; }
   micOnaySor(n);
 }
+function micParcaIsle(metinHam){ micAdayIsle([metinHam],false); }
 
 function micOnaySor(n){
   if(micOnayZamanlayici) clearTimeout(micOnayZamanlayici);
