@@ -1263,8 +1263,12 @@ function sayiCoz(metinHam){
      döndürebilir — tireyi boşluğa çevirip iki ayrı kelime gibi işliyoruz. */
   let metin=(metinHam||'').toLowerCase().trim().replace(/[.,!?]/g,'').replace(/[-–—]/g,' ').replace(/\s+/g,' ').trim();
   if(!metin) return null;
-  const rakam=metin.match(/\b(\d{1,2})\b/);
-  if(rakam){ const n=parseInt(rakam[1],10); if(n>=1&&n<=90) return n; }
+  /* Rakamla yazılmış ifadeler. Çağrıcılar "Two and seven, twenty-seven" der; motor "2 and 7 27" yazabilir:
+     ilk sayıyı değil SONUNCUYU (tam sayıyı) alırız. Yalnız iki tek haneli rakam varsa ("2 7", "2 and 7")
+     bunlar basamak basamak okunmuştur → 27. */
+  const rakamlar=(metin.match(/\b\d{1,2}\b/g)||[]).map(Number);
+  if(rakamlar.length===2 && rakamlar[0]<=9 && rakamlar[1]<=9){ const v=rakamlar[0]*10+rakamlar[1]; if(v>=1&&v<=90) return v; }
+  for(let i=rakamlar.length-1;i>=0;i--){ if(rakamlar[i]>=1&&rakamlar[i]<=90) return rakamlar[i]; }
   /* Karışıklık olmasın diye SADECE seçili mikrofon diline bakılır (Türkçe seçiliyken İngilizce
      kelimeler, İngilizce seçiliyken Türkçe kelimeler asla eşleşmez). */
   const ingilizceMi = (S.set.dil||'tr-TR').indexOf('en')===0;
